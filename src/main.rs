@@ -4,12 +4,14 @@ mod hue;
 
 #[derive(Debug, Clone)]
 enum Command {
-    CreateUser,
+    CreateUser
 }
 
 #[derive(Parser, Debug)]
 struct Args {
     command: String,
+    ip_address: String,
+    username: Option<String>,
 }
 
 fn match_command(cmd: &str) -> Option<Command> {
@@ -19,14 +21,14 @@ fn match_command(cmd: &str) -> Option<Command> {
     }
 }
 
-async fn run_command(cmd: Command) -> anyhow::Result<()> {
+async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
     return match cmd {
         Command::CreateUser => {
             // Call async function to create user
             println!("Creating a new user...");
 
-            let ip_address = "<IP_ADDRESS>"; // Pull from arguments
-            let device_name = "huelightcli#cli"; // Pull from arguments 
+            let ip_address = &args.ip_address;
+            let username = &args.username.clone().unwrap_or_else(|| "defaultuser".to_string());
 
             let client = hue::client::ReqwestHueClient {
                 client: reqwest::Client::new(),
@@ -34,7 +36,7 @@ async fn run_command(cmd: Command) -> anyhow::Result<()> {
 
             let mut logger = hue::client::Logger { log: Vec::new() };
 
-            hue::client::async_create_user(ip_address, device_name, &client, &mut logger).await
+            hue::client::async_create_user(ip_address, username, &client, &mut logger).await
         }
     };
 }
@@ -45,5 +47,6 @@ async fn main() -> anyhow::Result<()> {
     println!("Welcome to the Philips Hue CLI Controller!");
 
     let args = Args::parse();
-    run_command(match_command(&args.command).unwrap()).await
+    print!("Running command: {}\n", args.command);
+    run_command(match_command(&args.command).unwrap(), &args).await
 }
