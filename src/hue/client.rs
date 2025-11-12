@@ -1,3 +1,4 @@
+use anyhow::Context;
 use crate::hue::models::{CreateUserEntry, CreateUserResponse, Light, LightResponse, User};
 
 pub trait HueClient {
@@ -69,7 +70,7 @@ pub async fn async_create_user(
     let url = format!("http://{}/api", ip_address);
     let res = client.post_json(&url, &json_user).await?;
 
-    let parsed: CreateUserResponse = serde_json::from_str(&res).unwrap();
+    let parsed: CreateUserResponse = serde_json::from_str(&res).context("parsing Hue create-user response")?;
 
     match parsed.first() {
         Some(CreateUserEntry::Success { success }) => {
@@ -103,7 +104,7 @@ pub async fn async_get_all_lights(
 
     let url = format!("http://{}/api/{}/lights", ip_address, username);
     let res = client.get(&url).await?;
-    let parsed: LightResponse = serde_json::from_str(&res).unwrap();
+    let parsed: LightResponse = serde_json::from_str(&res).context("parsing /lights GET response")?;
 
     for (id, light) in parsed.0 {
         logger.log(&format!(
