@@ -10,7 +10,6 @@ pub struct SuccessDetail {
 #[derive(Debug, Deserialize)]
 pub struct ErrorDetail {
     #[serde(rename = "type")]
-    pub r#type: u32,
     pub address: String,
     pub description: String,
 }

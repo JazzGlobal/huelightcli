@@ -24,7 +24,7 @@ fn match_command(cmd: &str) -> Option<Command> {
 }
 
 async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
-    return match cmd {
+    match cmd {
         Command::CreateUser => {
             // Call async function to create user
             println!("Creating a new user...");
@@ -61,7 +61,7 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
 
             hue::client::async_get_all_lights(ip_address, &username, &client, &mut logger).await
         }
-    };
+    }
 }
 
 #[tokio::main]
@@ -70,6 +70,6 @@ async fn main() -> anyhow::Result<()> {
     println!("Welcome to the Philips Hue CLI Controller!");
 
     let args = Args::parse();
-    print!("Running command: {}\n", args.command);
+    println!("Running command: {}\n", args.command);
     run_command(match_command(&args.command).unwrap(), &args).await
 }

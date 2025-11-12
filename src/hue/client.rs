@@ -1,4 +1,4 @@
-use crate::hue::models::{CreateUserEntry, CreateUserResponse, Light, LightResponse, User};
+use crate::hue::models::{CreateUserEntry, CreateUserResponse, LightResponse, User};
 use anyhow::Context;
 
 pub trait HueClient {
@@ -21,7 +21,7 @@ impl HueClient for ReqwestHueClient {
             .send()
             .await?;
 
-        return Ok(res.text().await?);
+        Ok(res.text().await?)
     }
 
     async fn get(&self, url: &str) -> anyhow::Result<String> {
