@@ -2,9 +2,17 @@ use crate::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightSta
 use anyhow::Context;
 
 pub trait HueClient {
-    async fn post_json(&self, url: &str, body: &str) -> anyhow::Result<String>;
-    async fn get(&self, url: &str) -> anyhow::Result<String>;
-    async fn put_json(&self, url: &str, body: &str) -> anyhow::Result<String>;
+    fn post_json(
+        &self,
+        url: &str,
+        body: &str,
+    ) -> impl std::future::Future<Output = anyhow::Result<String>> + Send;
+    fn get(&self, url: &str) -> impl std::future::Future<Output = anyhow::Result<String>> + Send;
+    fn put_json(
+        &self,
+        url: &str,
+        body: &str,
+    ) -> impl std::future::Future<Output = anyhow::Result<String>> + Send;
 }
 
 pub struct ReqwestHueClient {

@@ -1,7 +1,7 @@
 use anyhow::Ok;
-use clap::{Arg, Parser};
-use huelight_core as hue;
+use clap::Arg;
 use hue::models::LightState;
+use huelight_core as hue;
 
 #[derive(Debug, Clone)]
 enum Command {
@@ -11,7 +11,7 @@ enum Command {
 }
 
 struct Args {
-    command: String, // TODO: This field is never read from, can we parse an "Args" instance from Clap and match on the command str that way?
+    // command: String, // TODO: This field is never read from, can we parse an "Args" instance from Clap and match on the command str that way?
     ip_address: String,
     username: Option<String>,
     light_id: Option<u32>,
@@ -75,7 +75,8 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
             hue::client::async_set_light_state(
                 ip_address,
                 &username,
-                args.light_id.expect("Light ID is required for setting light state."),
+                args.light_id
+                    .expect("Light ID is required for setting light state."),
                 &args
                     .light_state
                     .clone()
@@ -99,77 +100,88 @@ async fn main() -> anyhow::Result<()> {
             Arg::new("command")
                 .short('c')
                 .help("The command to execute: create-user, get-lights, set-light-state")
-                .required(true)
+                .required(true),
         )
         .arg(
             Arg::new("ip_address")
                 .short('i')
                 .help("The IP address of the Hue Bridge")
-                .required(true)
-        ).arg(
+                .required(true),
+        )
+        .arg(
             Arg::new("username")
                 .short('u')
                 .help("The username to use in requests for the Hue Bridge API")
-                .required(false)
+                .required(false),
         )
         .arg(
             Arg::new("light_id")
                 .short('l')
                 .help("The ID of the light to control")
-                .required(false)
+                .required(false),
         )
         .arg(
             Arg::new("light_state")
                 .short('s')
                 .help("The state to set the light to (e.g., on, off, brightness)")
-                .required(false)
+                .required(false),
         )
         .get_matches();
 
-        let command_str = cli.get_one::<String>("command").unwrap();
-        let ip_address = cli.get_one::<String>("ip_address").unwrap();
+    let command_str = cli.get_one::<String>("command").unwrap();
+    let ip_address = cli.get_one::<String>("ip_address").unwrap();
 
-        match command_str.as_str() {
-            "create-user" => {
-                let args = Args {
-                    command: command_str.clone(),
-                    ip_address: ip_address.clone(),
-                    username: None,
-                    light_id: None,
-                    light_state: None,
-                };
-                run_command(Command::CreateUser, &args).await?;
-            }
-            "get-lights" => {
-                let username = cli.get_one::<String>("username").expect("Username is required for getting lights.").clone();
-                let args = Args {
-                    command: command_str.clone(),
-                    ip_address: ip_address.clone(),
-                    username: Some(username),
-                    light_id: None,
-                    light_state: None,
-                };
-                run_command(Command::GetLights, &args).await?;
-            }
-            "set-light-state" => {
-                let username = cli.get_one::<String>("username").expect("Username is required for setting light state.").clone();
-                let light_id = cli.get_one::<String>("light_id").expect("Light ID is required for setting light state.").parse::<u32>().expect("Light ID must be a valid number.");
-                // We're going to make sure light_state can be parsed from JSON.
-                let light_state: LightState = serde_json::from_str(cli.get_one::<String>("light_state").expect("Light state is required for setting light state.")).expect("Failed to parse light state JSON");
-                let args = Args {
-                    command: command_str.clone(),
-                    ip_address: ip_address.clone(),
-                    username: Some(username),
-                    light_id: Some(light_id),
-                    light_state: Some(light_state),
-
-                };
-                run_command(Command::SetLightState, &args).await?;
-            }
-            _ => {
-                panic!("Unknown command!: {}", command_str);
-            }
+    match command_str.as_str() {
+        "create-user" => {
+            let args = Args {
+                ip_address: ip_address.clone(),
+                username: None,
+                light_id: None,
+                light_state: None,
+            };
+            run_command(Command::CreateUser, &args).await?;
         }
+        "get-lights" => {
+            let username = cli
+                .get_one::<String>("username")
+                .expect("Username is required for getting lights.")
+                .clone();
+            let args = Args {
+                ip_address: ip_address.clone(),
+                username: Some(username),
+                light_id: None,
+                light_state: None,
+            };
+            run_command(Command::GetLights, &args).await?;
+        }
+        "set-light-state" => {
+            let username = cli
+                .get_one::<String>("username")
+                .expect("Username is required for setting light state.")
+                .clone();
+            let light_id = cli
+                .get_one::<String>("light_id")
+                .expect("Light ID is required for setting light state.")
+                .parse::<u32>()
+                .expect("Light ID must be a valid number.");
+            // We're going to make sure light_state can be parsed from JSON.
+            let light_state: LightState = serde_json::from_str(
+                cli.get_one::<String>("light_state")
+                    .expect("Light state is required for setting light state."),
+            )
+            .expect("Failed to parse light state JSON");
+            let args = Args {
+                ip_address: ip_address.clone(),
+                username: Some(username),
+                light_id: Some(light_id),
+                light_state: Some(light_state),
+            };
+            run_command(Command::SetLightState, &args).await?;
+        }
+        _ => {
+            panic!("Unknown command!: {}", command_str);
+        }
+    }
 
     Ok(())
 }
