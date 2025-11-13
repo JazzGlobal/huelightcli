@@ -1,4 +1,4 @@
-use crate::hue::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightState, User};
+use crate::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightState, User};
 use anyhow::Context;
 
 pub trait HueClient {
@@ -168,7 +168,7 @@ pub async fn async_set_light_state(
 #[cfg(test)]
 mod tests {
     use super::{async_create_user, async_get_all_lights};
-    use crate::hue::client::{HueClient, Logger};
+    use crate::client::{HueClient, Logger};
 
     #[tokio::test]
     async fn async_create_user_successresponse_logs_username() {

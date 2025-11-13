@@ -1,9 +1,7 @@
 use anyhow::Ok;
 use clap::{Arg, Parser};
-
-use crate::hue::models::LightState;
-
-mod hue;
+use huelight_core as hue;
+use hue::models::LightState;
 
 #[derive(Debug, Clone)]
 enum Command {
@@ -13,20 +11,11 @@ enum Command {
 }
 
 struct Args {
-    command: String,
+    command: String, // TODO: This field is never read from, can we parse an "Args" instance from Clap and match on the command str that way?
     ip_address: String,
     username: Option<String>,
     light_id: Option<u32>,
     light_state: Option<LightState>,
-}
-
-fn match_command(cmd: &str) -> Option<Command> {
-    match cmd {
-        "create-user" => Some(Command::CreateUser),
-        "get-lights" => Some(Command::GetLights),
-        "set-light-state" => Some(Command::SetLightState),
-        _ => panic!("Unknown command!: {}", cmd),
-    }
 }
 
 async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
@@ -183,7 +172,4 @@ async fn main() -> anyhow::Result<()> {
         }
 
     Ok(())
-    // let args = Args::parse();
-    // println!("Running command: {}\n", args.command);
-    // run_command(match_command(&args.command).unwrap(), &args).await
 }
