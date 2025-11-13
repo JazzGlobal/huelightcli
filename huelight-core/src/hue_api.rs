@@ -1,7 +1,7 @@
 use anyhow::Context;
 
-use crate::logger::{ILogger};
 use crate::client::HueClient;
+use crate::logger::ILogger;
 use crate::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightState, User};
 
 pub async fn async_create_user(
@@ -109,7 +109,7 @@ pub async fn async_set_light_state(
 #[cfg(test)]
 mod tests {
     use super::{async_create_user, async_get_all_lights};
-    use crate::client::{HueClient};
+    use crate::client::HueClient;
     use crate::logger::{ILogger, Logger};
 
     #[tokio::test]
