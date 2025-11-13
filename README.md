@@ -9,14 +9,14 @@ This roadmap outlines the development plan for the HueLight backend, including t
 **Goal:** Establish a clean multi-crate workspace and centralize all Hue interaction logic.
 
 - [X] Create workspace structure:  
-  - [X] `huelight-core/` (library crate)  
+  - [X] `huelight-core/` (library crate)
   - [X] `huelight-cli/` (binary crate)
-- [ ] Implement `huelight-core` foundation:  
+- [X] Implement `huelight-core` foundation:  
   - [X] `client.rs` (HueClient trait + ReqwestHueClient)  
   - [ ] (Optional) `MockHueClient`  
   - [X] `models.rs` (Light, LightState, DTOs)  
   - [X] `config.rs` (load/save config)  
-  - [ ] `hue_api.rs` (high-level API wrapper)  
+  - [X] `hue_api.rs` (high-level API wrapper)  
   - [X] `lib.rs` exporting all modules
 
 ---

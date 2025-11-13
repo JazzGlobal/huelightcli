@@ -2,7 +2,7 @@ use anyhow::{Context, Ok};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
-use crate::client::ILogger;
+use crate::logger::ILogger;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {

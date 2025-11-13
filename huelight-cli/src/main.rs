@@ -1,6 +1,6 @@
 use anyhow::{Context, Ok};
 use clap::Arg;
-use hue::client::{ILogger, Logger};
+use hue::logger::{ILogger, Logger};
 use hue::models::LightState;
 use huelight_core::{self as hue};
 #[derive(Debug, Clone)]
@@ -35,7 +35,7 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
                 client: reqwest::Client::new(),
             };
 
-            hue::client::async_create_user(ip_address, username, &client, &mut logger).await
+            hue::hue_api::async_create_user(ip_address, username, &client, &mut logger).await
         }
         Command::GetLights => {
             // Call async function to get lights
@@ -51,7 +51,7 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
                 client: reqwest::Client::new(),
             };
 
-            hue::client::async_get_all_lights(ip_address, &username, &client, &mut logger).await
+            hue::hue_api::async_get_all_lights(ip_address, &username, &client, &mut logger).await
         }
         Command::SetLightState => {
             // Call async function to set light state
@@ -67,7 +67,7 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
                 client: reqwest::Client::new(),
             };
 
-            hue::client::async_set_light_state(
+            hue::hue_api::async_set_light_state(
                 ip_address,
                 &username,
                 args.light_id
