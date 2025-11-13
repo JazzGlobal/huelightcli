@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 // Create User related models
@@ -42,12 +42,12 @@ pub struct Light {
     pub _type: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct LightState {
-    pub on: bool,
+    pub on: Option<bool>,
     #[serde(rename = "bri")]
-    pub brightness: u8,
-    pub hue: u16,
+    pub brightness: Option<u8>,
+    pub hue: Option<u16>,
     #[serde(rename = "sat")]
-    pub saturation: u8,
+    pub saturation: Option<u8>,
 }

@@ -1,9 +1,10 @@
-use crate::hue::models::{CreateUserEntry, CreateUserResponse, LightResponse, User};
+use crate::hue::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightState, User};
 use anyhow::Context;
 
 pub trait HueClient {
     async fn post_json(&self, url: &str, body: &str) -> anyhow::Result<String>;
     async fn get(&self, url: &str) -> anyhow::Result<String>;
+    async fn put_json(&self, url: &str, body: &str) -> anyhow::Result<String>;
 }
 
 pub struct ReqwestHueClient {
@@ -26,6 +27,18 @@ impl HueClient for ReqwestHueClient {
 
     async fn get(&self, url: &str) -> anyhow::Result<String> {
         let res = self.client.get(url).send().await?;
+        Ok(res.text().await?)
+    }
+
+    async fn put_json(&self, url: &str, body: &str) -> anyhow::Result<String> {
+        let res = self
+            .client
+            .put(url)
+            .header("Content-Type", "application/json")
+            .body(body.to_string())
+            .send()
+            .await?;
+
         Ok(res.text().await?)
     }
 }
@@ -112,14 +125,42 @@ pub async fn async_get_all_lights(
         logger.log(&format!(
             "Light ID: {}, On: {}, Name: {}, Type: {}, Brightness: {}, Hue: {}, Saturation: {}",
             id,
-            light.state.on,
+            light.state.on.unwrap_or(false),
             light.name,
             light._type,
-            light.state.brightness,
-            light.state.hue,
-            light.state.saturation
+            light.state.brightness.unwrap_or(0),
+            light.state.hue.unwrap_or(0),
+            light.state.saturation.unwrap_or(0)
         ));
     }
+
+    Ok(())
+}
+
+pub async fn async_set_light_state(
+    ip_address: &str,
+    username: &str,
+    light_id: u32,
+    state: &LightState,
+    client: &impl HueClient,
+    logger: &mut impl ILogger,
+) -> anyhow::Result<()> {
+    /*
+     * Sends a PUT request to change the state of a specific light.
+     */
+
+    let url = format!(
+        "http://{}/api/{}/lights/{}/state",
+        ip_address, username, light_id
+    );
+    let json_state = serde_json::to_string(&state).context("serializing light state")?;
+
+    let res = client.put_json(&url, &json_state).await?;
+
+    logger.log(&format!(
+        "Response from setting light {} state: {}",
+        light_id, res
+    ));
 
     Ok(())
 }
@@ -141,6 +182,10 @@ mod tests {
             }
 
             async fn get(&self, _url: &str) -> anyhow::Result<String> {
+                Ok("".to_string())
+            }
+
+            async fn put_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
                 Ok("".to_string())
             }
         }
@@ -172,6 +217,10 @@ mod tests {
             }
 
             async fn get(&self, _url: &str) -> anyhow::Result<String> {
+                Ok("".to_string())
+            }
+
+            async fn put_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
                 Ok("".to_string())
             }
         }
@@ -226,6 +275,10 @@ mod tests {
                     }
                 }"#;
                 Ok(fake_response.to_string())
+            }
+
+            async fn put_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+                Ok("".to_string())
             }
         }
 
