@@ -12,12 +12,12 @@ This roadmap outlines the development plan for the HueLight backend, including t
   - [X] `huelight-core/` (library crate)  
   - [X] `huelight-cli/` (binary crate)
 - [ ] Implement `huelight-core` foundation:  
-  - [ ] `client.rs` (HueClient trait + ReqwestHueClient)  
+  - [X] `client.rs` (HueClient trait + ReqwestHueClient)  
   - [ ] (Optional) `MockHueClient`  
-  - [ ] `models.rs` (Light, LightState, DTOs)  
-  - [ ] `config.rs` (load/save config)  
+  - [X] `models.rs` (Light, LightState, DTOs)  
+  - [X] `config.rs` (load/save config)  
   - [ ] `hue_api.rs` (high-level API wrapper)  
-  - [ ] `lib.rs` exporting all modules
+  - [X] `lib.rs` exporting all modules
 
 ---
 
