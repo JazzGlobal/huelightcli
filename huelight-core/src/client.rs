@@ -53,11 +53,13 @@ impl HueClient for ReqwestHueClient {
 
 pub trait ILogger {
     fn log(&mut self, message: &str);
+    fn entries(&self) -> &Vec<String>;
 }
 
+#[derive(Default)]
 pub struct Logger {
     // Logger implementation goes here
-    pub log: Vec<String>,
+    entries: Vec<String>,
 }
 
 impl ILogger for Logger {
@@ -66,8 +68,12 @@ impl ILogger for Logger {
          * Logs a message to the logger's internal log storage.
          * Puts a newline after each message.
          */
-        self.log.push(message.to_string() + "\n");
+        self.entries.push(message.to_string() + "\n");
         println!("{}", message);
+    }
+
+    fn entries(&self) -> &Vec<String> {
+        &self.entries
     }
 }
 
@@ -197,7 +203,9 @@ mod tests {
                 Ok("".to_string())
             }
         }
-        let mut logger = Logger { log: Vec::new() };
+        let mut logger = Logger {
+            entries: Vec::new(),
+        };
         let fake_client = FakeClient {};
 
         // Act
@@ -207,7 +215,7 @@ mod tests {
         assert!(result.is_ok());
         assert!(
             logger
-                .log
+                .entries
                 .iter()
                 .any(|entry| entry.contains("User created successfully! Username: testusername"))
         );
@@ -232,7 +240,9 @@ mod tests {
                 Ok("".to_string())
             }
         }
-        let mut logger = Logger { log: Vec::new() };
+        let mut logger = Logger {
+            entries: Vec::new(),
+        };
         let fake_client = FakeClient {};
 
         // Act
@@ -242,7 +252,7 @@ mod tests {
         assert!(result.is_ok());
         assert!(
             logger
-                .log
+                .entries
                 .iter()
                 .any(|entry| entry.contains("Error creating user: / - link button not pressed"))
         );
@@ -290,7 +300,9 @@ mod tests {
             }
         }
 
-        let mut logger = Logger { log: Vec::new() };
+        let mut logger = Logger {
+            entries: Vec::new(),
+        };
         let fake_client = FakeClient {};
 
         // Act
@@ -301,13 +313,13 @@ mod tests {
         assert!(result.is_ok());
         assert!(
             logger
-                .log
+                .entries
                 .iter()
                 .any(|entry| entry.contains("Light ID: 1, On: true, Name: Living Room Light, Type: Extended color light, Brightness: 200, Hue: 50000, Saturation: 150"))
         );
         assert!(
             logger
-                .log
+                .entries
                 .iter()
                 .any(|entry| entry.contains("Light ID: 2, On: false, Name: Bedroom Light, Type: Dimmable light, Brightness: 100, Hue: 30000, Saturation: 100"))
         );

@@ -1,8 +1,8 @@
-use anyhow::Ok;
+use anyhow::{Context, Ok};
 use clap::Arg;
+use hue::client::{ILogger, Logger};
 use hue::models::LightState;
-use huelight_core as hue;
-
+use huelight_core::{self as hue};
 #[derive(Debug, Clone)]
 enum Command {
     CreateUser,
@@ -19,11 +19,12 @@ struct Args {
 }
 
 async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
+    let mut logger = Logger::default();
+
     match cmd {
         Command::CreateUser => {
             // Call async function to create user
             println!("Creating a new user...");
-
             let ip_address = &args.ip_address;
             let username = &args
                 .username
@@ -33,8 +34,6 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
             let client = hue::client::ReqwestHueClient {
                 client: reqwest::Client::new(),
             };
-
-            let mut logger = hue::client::Logger { log: Vec::new() };
 
             hue::client::async_create_user(ip_address, username, &client, &mut logger).await
         }
@@ -52,8 +51,6 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
                 client: reqwest::Client::new(),
             };
 
-            let mut logger = hue::client::Logger { log: Vec::new() };
-
             hue::client::async_get_all_lights(ip_address, &username, &client, &mut logger).await
         }
         Command::SetLightState => {
@@ -69,8 +66,6 @@ async fn run_command(cmd: Command, args: &Args) -> anyhow::Result<()> {
             let client = hue::client::ReqwestHueClient {
                 client: reqwest::Client::new(),
             };
-
-            let mut logger = hue::client::Logger { log: Vec::new() };
 
             hue::client::async_set_light_state(
                 ip_address,
@@ -106,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
             Arg::new("ip_address")
                 .short('i')
                 .help("The IP address of the Hue Bridge")
-                .required(true),
+                .required(false),
         )
         .arg(
             Arg::new("username")
@@ -126,39 +121,93 @@ async fn main() -> anyhow::Result<()> {
                 .help("The state to set the light to (e.g., on, off, brightness)")
                 .required(false),
         )
+        .arg(
+            Arg::new("use_config")
+                .short('f')
+                .help("Use saved configuration from config file")
+                .required(false),
+        )
         .get_matches();
 
     let command_str = cli.get_one::<String>("command").unwrap();
-    let ip_address = cli.get_one::<String>("ip_address").unwrap();
+    let mut ip_address: String = cli
+        .get_one::<String>("ip_address")
+        .unwrap_or(&"".to_string().clone())
+        .clone();
+    let mut username: String = cli
+        .get_one::<String>("username")
+        .unwrap_or(&"".to_string().clone())
+        .clone();
+
+    // ip and user will either have a value, or be empty strings at this point.
+
+    // If use config is set, load config from file.
+    let config = hue::config::Config::load().await;
+    if config.is_err() {
+        println!("No saved configuration found. Proceeding without config file.");
+    }
+
+    let use_config: String = cli
+        .get_one::<String>("use_config")
+        .unwrap_or(&"false".to_string().clone())
+        .clone();
+    if use_config == "true" && config.is_ok() {
+        println!("Using saved configuration from config file...");
+
+        // Override ip and user with the loaded config values
+        let c = config.unwrap();
+        ip_address = c.bridge_ip.clone();
+        username = c.username.clone();
+    }
+
+    let mut logger = Logger::default();
+
+    // A username and password are required for all commands, but we want special error messages for setup because they are required to be provided by the user via command line for that command.
+    if command_str != "setup" {
+        if ip_address.is_empty() {
+            anyhow::bail!(
+                "IP address is required. Please provide it via command line or config file."
+            );
+        }
+        if username.is_empty() {
+            anyhow::bail!(
+                "Username is required for all commands besides 'setup'. Please provide it via command line or config file."
+            );
+        }
+    }
 
     match command_str.as_str() {
+        "setup" => {
+            logger.log("Setting up configuration...");
+            let ip_address = cli.get_one::<String>("ip_address").context("ip address is required and must be supplied via command line for the setup command.")?;
+            let username = cli.get_one::<String>("username").context(
+                "username is required and must be supplied via command line for the setup command.",
+            )?;
+            let config = hue::config::Config::new(ip_address.clone(), username.clone());
+            config.save(&mut logger).await?;
+            println!("Config saved: {:?}", config);
+        }
         "create-user" => {
+            let username = cli.get_one::<String>("username").context("username is required and must be supplied via command line for the create-user command.")?;
             let args = Args {
-                ip_address: ip_address.clone(),
-                username: None,
+                ip_address,
+                username: Some(username.clone()),
                 light_id: None,
                 light_state: None,
             };
             run_command(Command::CreateUser, &args).await?;
         }
         "get-lights" => {
-            let username = cli
-                .get_one::<String>("username")
-                .expect("Username is required for getting lights.")
-                .clone();
             let args = Args {
-                ip_address: ip_address.clone(),
-                username: Some(username),
+                ip_address,
+                username: Some(username.clone()),
                 light_id: None,
                 light_state: None,
             };
+
             run_command(Command::GetLights, &args).await?;
         }
         "set-light-state" => {
-            let username = cli
-                .get_one::<String>("username")
-                .expect("Username is required for setting light state.")
-                .clone();
             let light_id = cli
                 .get_one::<String>("light_id")
                 .expect("Light ID is required for setting light state.")
@@ -171,7 +220,7 @@ async fn main() -> anyhow::Result<()> {
             )
             .expect("Failed to parse light state JSON");
             let args = Args {
-                ip_address: ip_address.clone(),
+                ip_address,
                 username: Some(username),
                 light_id: Some(light_id),
                 light_state: Some(light_state),
@@ -179,7 +228,7 @@ async fn main() -> anyhow::Result<()> {
             run_command(Command::SetLightState, &args).await?;
         }
         _ => {
-            panic!("Unknown command!: {}", command_str);
+            anyhow::bail!("Unknown command!: {}", command_str);
         }
     }
 

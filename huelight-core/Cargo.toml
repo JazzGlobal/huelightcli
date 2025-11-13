@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.51", features = ["derive"] }
+dirs = "6.0.0"
 reqwest = "0.12.24"
 serde = "1.0.228"
 serde_json = "1.0.145"
