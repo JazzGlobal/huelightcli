@@ -68,8 +68,27 @@ async fn main() -> anyhow::Result<()> {
         client: reqwest::Client::new(),
     };
 
-    let config = hue::config::Config::load(&hue::config::TokioFileHandler).await?;
+    let config: anyhow::Result<hue::config::Config>;
 
+    if cli.subcommand_name() != Some("setup") && cli.subcommand_name().is_some() {
+        config = hue::config::Config::load(&hue::config::TokioFileHandler).await;
+    }
+    else {
+        config = Err(anyhow::anyhow!("No config loaded"));
+    }
+
+    if (config.is_err() || config.as_ref().unwrap().username.is_empty() || config.as_ref().unwrap().bridge_ip.is_empty())
+        && cli.subcommand_name() != Some("setup")
+    {
+        anyhow::bail!("No configuration found! Please run the 'setup' command first.");
+    }
+
+    // if we get here, we have a valid config or are running setup
+    let c = config.unwrap_or(hue::config::Config {
+        bridge_ip: String::new(),
+        username: String::new(),
+    });
+    
     match cli.subcommand() {
         Some(("light", sub_light_cmd)) => {
             match sub_light_cmd.subcommand() {
@@ -77,8 +96,8 @@ async fn main() -> anyhow::Result<()> {
                     // Get the list of lights
                     println!("Getting list of lights...");
                     hue_api::async_get_all_lights(
-                        &config.bridge_ip,
-                        &config.username,
+                        &c.bridge_ip,
+                        &c.username,
                         &client,
                         &mut logger,
                     )
@@ -96,8 +115,8 @@ async fn main() -> anyhow::Result<()> {
                         ..Default::default()
                     };
                     hue_api::async_set_light_state(
-                        &config.bridge_ip,
-                        &config.username,
+                        &c.bridge_ip,
+                        &c.username,
                         light_id,
                         &light_state,
                         &client,
@@ -117,8 +136,8 @@ async fn main() -> anyhow::Result<()> {
                         ..Default::default()
                     };
                     hue_api::async_set_light_state(
-                        &config.bridge_ip,
-                        &config.username,
+                        &c.bridge_ip,
+                        &c.username,
                         light_id,
                         &light_state,
                         &client,
