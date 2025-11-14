@@ -1,8 +1,35 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Ok};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::logger::ILogger;
+
+pub trait FileHandler
+{
+    fn read_file(&self, path: &str) -> impl std::future::Future<Output = anyhow::Result<String>> + Send;
+    fn write_file(&self, path: &str, content: &str) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+    fn create_dir_all(&self, path: &PathBuf) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+}
+
+#[derive(Default)]
+pub struct TokioFileHandler;
+
+impl FileHandler for TokioFileHandler
+{
+    async fn read_file(&self, path: &str) -> anyhow::Result<String> {
+            fs::read_to_string(path).await.context("reading file")
+    }
+
+    async fn write_file(&self, path: &str, content: &str) -> anyhow::Result<()> {
+        fs::write(path, content).await.context("writing file")
+    }
+
+    async fn create_dir_all(&self, path: &PathBuf) -> anyhow::Result<()> {
+            fs::create_dir_all(path).await.context("creating directory")
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -18,12 +45,12 @@ impl Config {
         }
     }
 
-    pub async fn save(&self, logger: &mut impl ILogger) -> anyhow::Result<()> {
+    pub async fn save(&self, logger: &mut impl ILogger, file_handler: &impl FileHandler) -> anyhow::Result<()> {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?
             .join("huelightcli");
 
-        std::fs::create_dir_all(&config_dir).context("creating config directory")?;
+        file_handler.create_dir_all(&config_dir).await.context("creating config directory")?;
 
         let config_path = config_dir.join("config.json");
         let config_json = serde_json::to_string(self);
@@ -48,14 +75,12 @@ impl Config {
         Ok(())
     }
 
-    pub async fn load() -> anyhow::Result<Config> {
+    pub async fn load(file_handler: &impl FileHandler) -> anyhow::Result<Config> {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?
             .join("huelightcli");
         let path = config_dir.join("config.json");
-        let config_json = fs::read_to_string(path)
-            .await
-            .context("reading config file")?;
+        let config_json = file_handler.read_file(path.to_str().unwrap()).await?;
         serde_json::from_str(config_json.as_str()).context("Error parsing config file")
     }
 }

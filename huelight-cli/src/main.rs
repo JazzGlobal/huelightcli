@@ -142,7 +142,8 @@ async fn main() -> anyhow::Result<()> {
     // ip and user will either have a value, or be empty strings at this point.
 
     // If use config is set, load config from file.
-    let config = hue::config::Config::load().await;
+    let file_handler = hue::config::TokioFileHandler::default();
+    let config = hue::config::Config::load(&file_handler).await;
     if config.is_err() {
         println!("No saved configuration found. Proceeding without config file.");
     }
@@ -183,8 +184,9 @@ async fn main() -> anyhow::Result<()> {
             let username = cli.get_one::<String>("username").context(
                 "username is required and must be supplied via command line for the setup command.",
             )?;
+            let file_handler = hue::config::TokioFileHandler::default();
             let config = hue::config::Config::new(ip_address.clone(), username.clone());
-            config.save(&mut logger).await?;
+            config.save(&mut logger, &file_handler).await?;
             println!("Config saved: {:?}", config);
         }
         "create-user" => {
