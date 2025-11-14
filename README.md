@@ -25,17 +25,17 @@ This roadmap outlines the development plan for the HueLight backend, including t
 
 **Goal:** End-to-end communication with the Hue Bridge using real config, pairing, and parsed models.
 
-- [ ] Configuration system:  
-  - [ ] Choose config file location  
-  - [ ] Implement load/save/validate  
+- [X] Configuration system:  
+  - [X] Choose config file location  
+  - [X] Implement load/save/validate  
 - [ ] Bridge pairing / setup workflow:  
   - [ ] Implement `register_user(bridge_ip)`  
   - [ ] Handle “press link button” gracefully  
-  - [ ] CLI `setup` command to save config  
-- [ ] Core Hue operations via `HueApi`:  
-  - [ ] `get_lights()`  
-  - [ ] `set_light_state(id, LightStateUpdate)`  
-  - [ ] Raw Hue JSON → domain model mapping  
+  - [X] CLI `setup` command to save config  
+- [X] Core Hue operations via `HueApi`:  
+  - [X] `get_lights()`  
+  - [X] `set_light_state(id, LightStateUpdate)`  
+  - [X] Raw Hue JSON → domain model mapping  
 
 ---
 
@@ -49,11 +49,11 @@ This roadmap outlines the development plan for the HueLight backend, including t
   - [ ] `lights off <id>`  
   - [ ] `lights toggle <id>`  
   - [ ] `lights brightness <id> <0-100>`  
-- [ ] Connect CLI commands to core library  
+- [X] Connect CLI commands to core library  
 - [ ] Improve UX with human-friendly output  
 - [ ] Provide helpful error messages:  
-  - [ ] Missing config  
-  - [ ] Invalid IDs  
+  - [X] Missing config  
+  - [X] Invalid IDs  
   - [ ] Bridge unreachable  
 
 ---
@@ -77,9 +77,9 @@ This roadmap outlines the development plan for the HueLight backend, including t
 
 **Goal:** Achieve reliability and regression protection with real tests.
 
-- [ ] Implement `MockHueClient` for isolated tests  
+- [X] Implement `MockHueClient` for isolated tests  
 - [ ] Add unit tests for:  
-  - [ ] JSON parsing  
+  - [X] JSON parsing  
   - [ ] Config load/save using temp directory  
   - [ ] `HueApi` logic (using mock client)  
 - [ ] (Optional) Add integration tests:  
