@@ -146,10 +146,7 @@ mod tests {
         }
 
         // Act
-        config
-            .save(&mut logger, &MockFileHandler)
-            .await
-            .unwrap();
+        config.save(&mut logger, &MockFileHandler).await.unwrap();
 
         // Assert
         assert!(

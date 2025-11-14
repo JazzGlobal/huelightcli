@@ -42,7 +42,7 @@ pub struct Light {
     pub _type: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct LightState {
     pub on: Option<bool>,
     #[serde(rename = "bri")]
