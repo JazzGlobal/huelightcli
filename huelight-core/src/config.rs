@@ -147,7 +147,7 @@ mod tests {
 
         // Act
         config
-            .save(&mut logger, &MockFileHandler::default())
+            .save(&mut logger, &MockFileHandler)
             .await
             .unwrap();
 
@@ -184,7 +184,7 @@ mod tests {
         }
 
         // Act
-        let result = config.save(&mut logger, &MockFileHandler::default()).await;
+        let result = config.save(&mut logger, &MockFileHandler).await;
 
         // Assert
         assert!(result.is_err());
@@ -220,7 +220,7 @@ mod tests {
         }
 
         // Act
-        let result = config.save(&mut logger, &MockFileHandler::default()).await;
+        let result = config.save(&mut logger, &MockFileHandler).await;
 
         // Assert
         assert!(result.is_err());
@@ -253,7 +253,7 @@ mod tests {
         }
 
         // Act
-        let _result = Config::load(&MockFileHandler::default()).await.unwrap();
+        let _result = Config::load(&MockFileHandler).await.unwrap();
 
         // Assert
         assert_eq!(_result.bridge_ip, "192.168.1.1");
@@ -284,12 +284,10 @@ mod tests {
         }
 
         // Act
-        let _result = Config::load(&MockFileHandler::default()).await;
+        let _result = Config::load(&MockFileHandler).await;
 
         // Assert
-        assert!(_result.is_err());
-        _result
-            .err()
-            .map(|e| assert!(e.to_string().contains("Error parsing config file")));
+        let err = _result.expect_err("expected config parse to fail");
+        assert!(err.to_string().contains("Error parsing config file"));
     }
 }
