@@ -46,7 +46,7 @@ pub struct Light {
 pub struct LightState {
     pub on: Option<bool>,
     #[serde(rename = "bri")]
-    pub brightness: Option<u8>,
+    pub brightness: Option<u16>,
     pub hue: Option<u16>,
     #[serde(rename = "sat")]
     pub saturation: Option<u8>,

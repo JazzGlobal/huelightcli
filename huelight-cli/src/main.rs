@@ -60,6 +60,21 @@ async fn main() -> anyhow::Result<()> {
                                 .help("ID of light to toggle")
                         ),
                 )
+                .subcommand(
+                    clap::Command::new("brightness")
+                    .about("Sets the brightness for a light")
+                    .arg(
+                        clap::Arg::new("light_id")
+                            .required(true)
+                            .help("ID of the light to set brightness")
+                    )
+                    .arg(
+                        clap::Arg::new("brightness")
+                        .required(true)
+                        .short('b')
+                        .help("Value between 0-255 to set light brightness to")
+                    )
+                )
         )
         .get_matches();
 
@@ -191,6 +206,26 @@ async fn main() -> anyhow::Result<()> {
                     } else {
                         anyhow::bail!("Light ID {} not found!", light_id);
                     }
+                },
+                Some(("brightness", light_cmd)) => {
+                    let light_id = light_cmd
+                        .get_one::<String>("light_id")
+                        .expect("Light ID is required")
+                        .parse::<u32>()
+                        .expect("Light ID must be a number");
+                    println!("Changing light brightness {}...", light_id);
+                    let brightness = light_cmd
+                        .get_one::<String>("brightness")
+                        .expect("Brightness is required")
+                        .parse::<u16>()
+                        .expect("Brightness must be a number");
+
+                    let l_state = LightState {
+                        brightness: Some(brightness),
+                        ..Default::default()
+                     };
+                    
+                    hue_api::async_set_light_state(&c.bridge_ip, &c.username, light_id, &l_state, &client, &mut logger).await?
                 }
                 _ => anyhow::bail!("Not a valid light subcommand!"),
             }

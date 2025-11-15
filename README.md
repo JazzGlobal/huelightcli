@@ -43,12 +43,12 @@ This roadmap outlines the development plan for the HueLight backend, including t
 
 **Goal:** Build a practical and intuitive CLI using `clap`, powered by `huelight-core`.
 
-- [ ] Implement CLI commands:  
+- [X] Implement CLI commands:  
   - [X] `lights list`  
   - [X] `lights on <id>`  
   - [X] `lights off <id>`  
   - [X] `lights toggle <id>`  
-  - [ ] `lights brightness <id> <0-100>`  
+  - [X] `lights brightness <id> <0-100>`  
 - [X] Connect CLI commands to core library  
 - [ ] Improve UX with human-friendly output  
 - [ ] Provide helpful error messages:  
