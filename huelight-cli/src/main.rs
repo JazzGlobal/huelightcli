@@ -95,8 +95,25 @@ async fn main() -> anyhow::Result<()> {
                 Some(("list", _)) => {
                     // Get the list of lights
                     println!("Getting list of lights...");
-                    hue_api::async_get_all_lights(&c.bridge_ip, &c.username, &client, &mut logger)
-                        .await?;
+                    let lights = hue_api::async_get_all_lights(
+                        &c.bridge_ip,
+                        &c.username,
+                        &client,
+                        &mut logger,
+                    )
+                    .await?;
+                    for (id, light) in lights.0 {
+                        logger.log(&format!(
+                        "Light ID: {}, On: {}, Name: {}, Type: {}, Brightness: {}, Hue: {}, Saturation: {}",
+                        id,
+                        light.state.on.unwrap_or(false),
+                        light.name,
+                        light._type,
+                        light.state.brightness.unwrap_or(0),
+                        light.state.hue.unwrap_or(0),
+                        light.state.saturation.unwrap_or(0)
+                    ));
+                    }
                 }
                 Some(("on", light_cmd)) => {
                     let light_id = light_cmd
@@ -148,8 +165,32 @@ async fn main() -> anyhow::Result<()> {
                         .expect("Light ID must be a number");
                     println!("Toggling light {}...", light_id);
                     // Implement logic to toggle light here
+                    let lights = hue_api::async_get_all_lights(
+                        &c.bridge_ip,
+                        &c.username,
+                        &client,
+                        &mut logger,
+                    )
+                    .await?;
 
-                    anyhow::bail!("Toggle functionality not yet implemented.");
+                    if let Some(light) = lights.0.get(&light_id) {
+                        let new_state = !light.state.on.unwrap_or(false);
+                        let light_state = LightState {
+                            on: Some(new_state),
+                            ..Default::default()
+                        };
+                        hue_api::async_set_light_state(
+                            &c.bridge_ip,
+                            &c.username,
+                            light_id,
+                            &light_state,
+                            &client,
+                            &mut logger,
+                        )
+                        .await?;
+                    } else {
+                        anyhow::bail!("Light ID {} not found!", light_id);
+                    }
                 }
                 _ => anyhow::bail!("Not a valid light subcommand!"),
             }

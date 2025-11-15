@@ -52,30 +52,24 @@ pub async fn async_get_all_lights(
     username: &str,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<LightResponse> {
     /*
      * Sends a get request to the input IP Address of the Hue Bridge to retrieve all lights connected to the bridge.
      */
 
     let url = format!("http://{}/api/{}/lights", ip_address, username);
     let res = client.get(&url).await?;
-    let parsed: LightResponse =
-        serde_json::from_str(&res).context("parsing /lights GET response")?;
-
-    for (id, light) in parsed.0 {
-        logger.log(&format!(
-            "Light ID: {}, On: {}, Name: {}, Type: {}, Brightness: {}, Hue: {}, Saturation: {}",
-            id,
-            light.state.on.unwrap_or(false),
-            light.name,
-            light._type,
-            light.state.brightness.unwrap_or(0),
-            light.state.hue.unwrap_or(0),
-            light.state.saturation.unwrap_or(0)
-        ));
+    let x = serde_json::from_str::<LightResponse>(&res).context("parsing /lights GET response");
+    if let Ok(parsed) = x {
+        logger.log("Successfully retrieved lights from Hue Bridge.");
+        Ok(parsed)
+    } else {
+        logger.log("Failed to parse lights from Hue Bridge response.");
+        anyhow::bail!(
+            "Failed to parse lights from Hue Bridge response.: {}",
+            x.err().unwrap()
+        );
     }
-
-    Ok(())
 }
 
 pub async fn async_set_light_state(
