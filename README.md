@@ -47,7 +47,7 @@ This roadmap outlines the development plan for the HueLight backend, including t
   - [X] `lights list`  
   - [X] `lights on <id>`  
   - [X] `lights off <id>`  
-  - [ ] `lights toggle <id>`  
+  - [X] `lights toggle <id>`  
   - [ ] `lights brightness <id> <0-100>`  
 - [X] Connect CLI commands to core library  
 - [ ] Improve UX with human-friendly output  
