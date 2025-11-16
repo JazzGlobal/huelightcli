@@ -206,7 +206,7 @@ async fn main() -> anyhow::Result<()> {
                     } else {
                         anyhow::bail!("Light ID {} not found!", light_id);
                     }
-                },
+                }
                 Some(("brightness", light_cmd)) => {
                     let light_id = light_cmd
                         .get_one::<String>("light_id")
@@ -223,9 +223,17 @@ async fn main() -> anyhow::Result<()> {
                     let l_state = LightState {
                         brightness: Some(brightness),
                         ..Default::default()
-                     };
-                    
-                    hue_api::async_set_light_state(&c.bridge_ip, &c.username, light_id, &l_state, &client, &mut logger).await?
+                    };
+
+                    hue_api::async_set_light_state(
+                        &c.bridge_ip,
+                        &c.username,
+                        light_id,
+                        &l_state,
+                        &client,
+                        &mut logger,
+                    )
+                    .await?
                 }
                 _ => anyhow::bail!("Not a valid light subcommand!"),
             }
