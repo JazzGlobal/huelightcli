@@ -1,41 +1,42 @@
 use std::path::Path;
-
-use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use tokio::fs;
 
 use crate::logger::ILogger;
+use crate::error::{CoreError, ConfigError};
 
 pub trait FileHandler {
     fn read_file(
         &self,
         path: &str,
-    ) -> impl std::future::Future<Output = anyhow::Result<String>> + Send;
+    ) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
     fn write_file(
         &self,
         path: &str,
         content: &str,
-    ) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+    ) -> impl std::future::Future<Output = Result<(), CoreError>> + Send;
     fn create_dir_all(
         &self,
         path: &Path,
-    ) -> impl std::future::Future<Output = anyhow::Result<()>> + Send;
+    ) -> impl std::future::Future<Output =  Result<(), CoreError>> + Send;
 }
 
 #[derive(Default)]
 pub struct TokioFileHandler;
 
 impl FileHandler for TokioFileHandler {
-    async fn read_file(&self, path: &str) -> anyhow::Result<String> {
-        fs::read_to_string(path).await.context("reading file")
+    async fn read_file(&self, path: &str) -> Result<String, CoreError> {
+        fs::read_to_string(path).await.map_err(CoreError::FileHandlerError)
     }
 
-    async fn write_file(&self, path: &str, content: &str) -> anyhow::Result<()> {
-        fs::write(path, content).await.context("writing file")
+    async fn write_file(&self, path: &str, content: &str) -> Result<(), CoreError> {
+        fs::write(path, content).await.map_err(CoreError::FileHandlerError)?;
+        Ok(())
     }
 
-    async fn create_dir_all(&self, path: &Path) -> anyhow::Result<()> {
-        fs::create_dir_all(path).await.context("creating directory")
+    async fn create_dir_all(&self, path: &Path) ->  Result<(), CoreError> {
+        fs::create_dir_all(path).await.map_err(CoreError::FileHandlerError)?;
+        Ok(())
     }
 }
 
@@ -57,9 +58,9 @@ impl Config {
         &self,
         logger: &mut impl ILogger,
         file_handler: &impl FileHandler,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), CoreError> {
         let config_dir = dirs::config_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?
+            .ok_or_else(|| CoreError::Config(ConfigError::ConfigDirectoryNotFoundError))?
             .join("huelightcli");
 
         let create_dir_result = file_handler.create_dir_all(&config_dir).await;
@@ -72,7 +73,11 @@ impl Config {
         }
 
         let config_path = config_dir.join("config.json");
-        let config_json = serde_json::to_string(self);
+        let config_json = serde_json::to_string(self).map_err(|err| {
+            logger.log(format!("Failed to serialize config: {:?}", err).as_str());
+            CoreError::Serialization(err)
+        })?;
+
 
         if let Some(config_json) = &config_json.as_ref().ok() {
             let res = file_handler
@@ -95,14 +100,13 @@ impl Config {
                 .as_str(),
             );
         } else {
-            logger.log(format!("Failed to serialize config: {:?}", config_json.err()).as_str());
             anyhow::bail!("Failed to serialize config");
         }
 
         Ok(())
     }
 
-    pub async fn load(file_handler: &impl FileHandler) -> anyhow::Result<Config> {
+    pub async fn load(file_handler: &impl FileHandler) -> Result<Config, CoreError> {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?
             .join("huelightcli");
@@ -118,8 +122,7 @@ mod tests {
 
     use super::Config;
     use crate::{
-        config::FileHandler,
-        logger::{ILogger, Logger},
+        config::FileHandler, error::CoreError, logger::{ILogger, Logger}
     };
 
     #[tokio::test]
@@ -132,15 +135,15 @@ mod tests {
         struct MockFileHandler;
 
         impl FileHandler for MockFileHandler {
-            async fn read_file(&self, _path: &str) -> anyhow::Result<String> {
+            async fn read_file(&self, _path: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
 
-            async fn write_file(&self, _path: &str, _content: &str) -> anyhow::Result<()> {
+            async fn write_file(&self, _path: &str, _content: &str) -> Result<(), CoreError> {
                 Ok(())
             }
 
-            async fn create_dir_all(&self, _path: &Path) -> anyhow::Result<()> {
+            async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
                 Ok(())
             }
         }
@@ -162,20 +165,19 @@ mod tests {
         // Arrange
         let config = Config::new("192.168.1.1".to_string(), "user".to_string());
         let mut logger = Logger::default();
-
         #[derive(Default)]
         struct MockFileHandler;
 
         impl FileHandler for MockFileHandler {
-            async fn read_file(&self, _path: &str) -> anyhow::Result<String> {
+            async fn read_file(&self, _path: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
 
-            async fn write_file(&self, _path: &str, _content: &str) -> anyhow::Result<()> {
-                Err(anyhow::anyhow!("Mock write error"))
+            async fn write_file(&self, _path: &str, _content: &str) -> Result<(), CoreError> {
+                Err(CoreError::UnexpectedResponse("error".to_string()))
             }
 
-            async fn create_dir_all(&self, _path: &Path) -> anyhow::Result<()> {
+            async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
                 Ok(())
             }
         }
@@ -203,16 +205,16 @@ mod tests {
         struct MockFileHandler;
 
         impl FileHandler for MockFileHandler {
-            async fn read_file(&self, _path: &str) -> anyhow::Result<String> {
+            async fn read_file(&self, _path: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
 
-            async fn write_file(&self, _path: &str, _content: &str) -> anyhow::Result<()> {
+            async fn write_file(&self, _path: &str, _content: &str) -> Result<(), CoreError> {
                 Ok(())
             }
 
-            async fn create_dir_all(&self, _path: &Path) -> anyhow::Result<()> {
-                Err(anyhow::anyhow!("Create directory error"))
+            async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
+                 Err(CoreError::UnexpectedResponse("create directory error".to_string()))
             }
         }
 
@@ -236,15 +238,15 @@ mod tests {
         struct MockFileHandler;
 
         impl FileHandler for MockFileHandler {
-            async fn read_file(&self, _path: &str) -> anyhow::Result<String> {
+            async fn read_file(&self, _path: &str) -> Result<String, CoreError> {
                 Ok("{ \"bridge_ip\": \"192.168.1.1\", \"username\": \"user\" }".to_string())
             }
 
-            async fn write_file(&self, _path: &str, _content: &str) -> anyhow::Result<()> {
+            async fn write_file(&self, _path: &str, _content: &str) -> Result<(), CoreError> {
                 Ok(())
             }
 
-            async fn create_dir_all(&self, _path: &Path) -> anyhow::Result<()> {
+            async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
                 Ok(())
             }
         }
@@ -264,18 +266,18 @@ mod tests {
         struct MockFileHandler;
 
         impl FileHandler for MockFileHandler {
-            async fn read_file(&self, _path: &str) -> anyhow::Result<String> {
+            async fn read_file(&self, _path: &str) -> Result<String, CoreError> {
                 Ok(
                     "{ \"not_bridge_ip\": \"192.168.1.1\", \"not_username\": \"user\" }"
                         .to_string(),
                 )
             }
 
-            async fn write_file(&self, _path: &str, _content: &str) -> anyhow::Result<()> {
+            async fn write_file(&self, _path: &str, _content: &str) -> Result<(), CoreError> {
                 Ok(())
             }
 
-            async fn create_dir_all(&self, _path: &Path) -> anyhow::Result<()> {
+            async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
                 Ok(())
             }
         }

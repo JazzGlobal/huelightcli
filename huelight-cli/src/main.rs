@@ -1,10 +1,12 @@
-use anyhow::Ok;
 use hue::logger::{ILogger, Logger};
 use hue::models::LightState;
 use huelight_core::{self as hue, client, hue_api};
 
+pub mod error;
+use error::CLIError;
+
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), CLIError> {
     // CLI application that will interface with the Philips Hue API to control smart lights with CMD commands.
     let cli = clap::Command::new("huelightcli")
         .version("1.0")
@@ -83,11 +85,11 @@ async fn main() -> anyhow::Result<()> {
         client: reqwest::Client::new(),
     };
 
-    let config: anyhow::Result<hue::config::Config> =
+    let config=
         if cli.subcommand_name() != Some("setup") && cli.subcommand_name().is_some() {
             hue::config::Config::load(&hue::config::TokioFileHandler).await
         } else {
-            Err(anyhow::anyhow!("No config loaded"))
+            Err(CLIError::ConfigNotLoaded)
         };
 
     if (config.is_err()
@@ -204,7 +206,7 @@ async fn main() -> anyhow::Result<()> {
                         )
                         .await?;
                     } else {
-                        anyhow::bail!("Light ID {} not found!", light_id);
+                        Err(CLIError::HueLightCoreError(hue::error::CoreError::Bridge(hue::error::HueBridgeError::LightDoesntExist)))
                     }
                 }
                 Some(("brightness", light_cmd)) => {
@@ -235,7 +237,7 @@ async fn main() -> anyhow::Result<()> {
                     )
                     .await?
                 }
-                _ => anyhow::bail!("Not a valid light subcommand!"),
+                _ => Err(CLIError::InvalidCommandError)
             }
         }
         Some(("setup", setup_cmd)) => {
@@ -258,7 +260,7 @@ async fn main() -> anyhow::Result<()> {
                 .save(&mut logger, &hue::config::TokioFileHandler)
                 .await?;
         }
-        Some((_, _)) | None => anyhow::bail!("Not a valid command!"),
+        Some((_, _)) | None => Err(CLIError::InvalidCommandError)
     }
 
     Ok(())

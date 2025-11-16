@@ -1,6 +1,5 @@
-use anyhow::Context;
-
 use crate::client::HueClient;
+use crate::error::{CoreError, HueBridgeError};
 use crate::logger::ILogger;
 use crate::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightState, User};
 
@@ -9,7 +8,7 @@ pub async fn async_create_user(
     device_name: &str,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> anyhow::Result<()> {
+) -> Result<User, CoreError> {
     /*
      * Sends a post request to the input IP Address of the Hue Bridge to create a new user with the given device name.
      */
@@ -25,12 +24,18 @@ pub async fn async_create_user(
     let res = client.post_json(&url, &json_user).await?;
 
     let parsed: CreateUserResponse =
-        serde_json::from_str(&res).context("parsing Hue create-user response")?;
+        serde_json::from_str(&res).map_err(|err| {
+            logger.log(
+                &format!("Failed to parse CreateUserResponse JSON: {err}. Raw(truncated): {}", &res[..res.len().min(200)])
+            );
+            CoreError::Serialization(err)
+        })?;
 
     match parsed.first() {
         Some(CreateUserEntry::Success { success }) => {
             let message = format!("User created successfully! Username: {}", success.username);
             logger.log(&message);
+            Ok(User { devicetype: success.username.clone() })
         }
         Some(CreateUserEntry::Error { error }) => {
             let message = format!(
@@ -38,13 +43,18 @@ pub async fn async_create_user(
                 error.address, error.description
             );
             logger.log(&message);
+            
+            match error.address.as_str() {
+                "101" => Err(CoreError::Bridge(HueBridgeError::LinkButtonNotPressed)),
+                _default => Err(CoreError::Bridge(HueBridgeError::Other { code: error.address.clone(), message: error.description.clone() }))
+            }
         }
         None => {
-            println!("Unexpected response from Hue Bridge.");
+            let message = "User could not be created. The Hue Bridge returned an unrecognized JSON format.";
+            logger.log(&message);
+            Err(CoreError::UnexpectedResponse(message.to_string()))
         }
     }
-
-    Ok(())
 }
 
 pub async fn async_get_all_lights(
@@ -52,24 +62,22 @@ pub async fn async_get_all_lights(
     username: &str,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> anyhow::Result<LightResponse> {
+) -> Result<LightResponse, CoreError> {
     /*
      * Sends a get request to the input IP Address of the Hue Bridge to retrieve all lights connected to the bridge.
      */
 
     let url = format!("http://{}/api/{}/lights", ip_address, username);
     let res = client.get(&url).await?;
-    let x = serde_json::from_str::<LightResponse>(&res).context("parsing /lights GET response");
-    if let Ok(parsed) = x {
-        logger.log("Successfully retrieved lights from Hue Bridge.");
-        Ok(parsed)
-    } else {
-        logger.log("Failed to parse lights from Hue Bridge response.");
-        anyhow::bail!(
-            "Failed to parse lights from Hue Bridge response.: {}",
-            x.err().unwrap()
-        );
-    }
+    let parsed = serde_json::from_str::<LightResponse>(&res)
+        .map_err(|err| {
+            logger.log(
+                &format!("Failed to parse lights JSON: {err}. Raw (truncated): {}", &res[..res.len().min(200)]),
+            );
+            CoreError::Serialization(err)
+        })?;
+
+    Ok(parsed)
 }
 
 pub async fn async_set_light_state(
@@ -79,7 +87,7 @@ pub async fn async_set_light_state(
     state: &LightState,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> anyhow::Result<()> {
+) -> Result<String, CoreError> {
     /*
      * Sends a PUT request to change the state of a specific light.
      */
@@ -88,22 +96,22 @@ pub async fn async_set_light_state(
         "http://{}/api/{}/lights/{}/state",
         ip_address, username, light_id
     );
-    let json_state = serde_json::to_string(&state).context("serializing light state")?;
-
+    let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
     let res = client.put_json(&url, &json_state).await?;
-
     logger.log(&format!(
         "Response from setting light {} state: {}",
         light_id, res
     ));
 
-    Ok(())
+    Ok(format!("Response from setting light {} state: {}",
+        light_id, res))
 }
 
 #[cfg(test)]
 mod tests {
     use super::{async_create_user, async_get_all_lights};
     use crate::client::HueClient;
+    use crate::error::CoreError;
     use crate::logger::{ILogger, Logger};
     use crate::models::LightState;
 
@@ -113,16 +121,16 @@ mod tests {
         struct FakeClient {}
 
         impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+            async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 let fake_response = r#"[{"success":{"username":"testusername"}}]"#;
                 Ok(fake_response.to_string())
             }
 
-            async fn get(&self, _url: &str) -> anyhow::Result<String> {
+            async fn get(&self, _url: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
 
-            async fn put_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+            async fn put_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
         }
@@ -148,16 +156,16 @@ mod tests {
         struct FakeClient {}
 
         impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+            async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 let fake_response = r#"[{"error":{"type":101,"address":"/","description":"link button not pressed"}}]"#;
                 Ok(fake_response.to_string())
             }
 
-            async fn get(&self, _url: &str) -> anyhow::Result<String> {
+            async fn get(&self, _url: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
 
-            async fn put_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+            async fn put_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
         }
@@ -183,12 +191,12 @@ mod tests {
         struct FakeClient {}
 
         impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+            async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
 
             // Setup get to return the expected lights JSON from Hue Bridge's /lights endpoint
-            async fn get(&self, _url: &str) -> anyhow::Result<String> {
+            async fn get(&self, _url: &str) -> Result<String, CoreError> {
                 let fake_response = r#"{
                     "1": {
                         "state": {
@@ -214,7 +222,7 @@ mod tests {
                 Ok(fake_response.to_string())
             }
 
-            async fn put_json(&self, _url: &str, _body: &str) -> anyhow::Result<String> {
+            async fn put_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
             }
         }
