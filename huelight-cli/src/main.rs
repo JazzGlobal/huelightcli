@@ -85,10 +85,16 @@ async fn main() -> Result<(), CLIError> {
         client: reqwest::Client::new(),
     };
 
-    let config=
-        if cli.subcommand_name() != Some("setup") && cli.subcommand_name().is_some() {
-            hue::config::Config::load(&hue::config::TokioFileHandler).await
-        } else {
+    let config: Result<hue::config::Config, CLIError> =
+        if let Some(name) = cli.subcommand_name() {
+            if !name.is_empty() && name != "setup" {
+                    Ok(hue::config::Config::load(&hue::config::TokioFileHandler).await?)
+            }
+            else {
+                Err(CLIError::ConfigNotLoaded)
+            }
+        }
+        else {
             Err(CLIError::ConfigNotLoaded)
         };
 
@@ -97,7 +103,7 @@ async fn main() -> Result<(), CLIError> {
         || config.as_ref().unwrap().bridge_ip.is_empty())
         && cli.subcommand_name() != Some("setup")
     {
-        anyhow::bail!("No configuration found! Please run the 'setup' command first.");
+       return Err(CLIError::ConfigNotLoaded);
     }
 
     // if we get here, we have a valid config or are running setup
@@ -106,7 +112,7 @@ async fn main() -> Result<(), CLIError> {
         username: String::new(),
     });
 
-    match cli.subcommand() {
+    return match cli.subcommand() {
         Some(("light", sub_light_cmd)) => {
             match sub_light_cmd.subcommand() {
                 Some(("list", _)) => {
@@ -118,7 +124,9 @@ async fn main() -> Result<(), CLIError> {
                         &client,
                         &mut logger,
                     )
-                    .await?;
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+
                     for (id, light) in lights.0 {
                         logger.log(&format!(
                         "Light ID: {}, On: {}, Name: {}, Type: {}, Brightness: {}, Hue: {}, Saturation: {}",
@@ -131,6 +139,8 @@ async fn main() -> Result<(), CLIError> {
                         light.state.saturation.unwrap_or(0)
                     ));
                     }
+
+                    Ok(())
                 }
                 Some(("on", light_cmd)) => {
                     let light_id = light_cmd
@@ -151,7 +161,9 @@ async fn main() -> Result<(), CLIError> {
                         &client,
                         &mut logger,
                     )
-                    .await?;
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+                    Ok(())
                 }
                 Some(("off", light_cmd)) => {
                     let light_id = light_cmd
@@ -172,7 +184,9 @@ async fn main() -> Result<(), CLIError> {
                         &client,
                         &mut logger,
                     )
-                    .await?;
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+                    Ok(())
                 }
                 Some(("toggle", light_cmd)) => {
                     let light_id = light_cmd
@@ -188,7 +202,8 @@ async fn main() -> Result<(), CLIError> {
                         &client,
                         &mut logger,
                     )
-                    .await?;
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
 
                     if let Some(light) = lights.0.get(&light_id) {
                         let new_state = !light.state.on.unwrap_or(false);
@@ -204,10 +219,11 @@ async fn main() -> Result<(), CLIError> {
                             &client,
                             &mut logger,
                         )
-                        .await?;
-                    } else {
-                        Err(CLIError::HueLightCoreError(hue::error::CoreError::Bridge(hue::error::HueBridgeError::LightDoesntExist)))
+                        .await
+                    .map_err(CLIError::HueLightCoreError)?;
                     }
+
+                    Ok(())
                 }
                 Some(("brightness", light_cmd)) => {
                     let light_id = light_cmd
@@ -235,7 +251,10 @@ async fn main() -> Result<(), CLIError> {
                         &client,
                         &mut logger,
                     )
-                    .await?
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+
+                    Ok(())
                 }
                 _ => Err(CLIError::InvalidCommandError)
             }
@@ -258,10 +277,11 @@ async fn main() -> Result<(), CLIError> {
 
             huelight_core::config::Config::new(ip_address, username)
                 .save(&mut logger, &hue::config::TokioFileHandler)
-                .await?;
-        }
-        Some((_, _)) | None => Err(CLIError::InvalidCommandError)
-    }
+                .await
+                .map_err(CLIError::HueLightCoreError)?;
+            Ok(())
 
-    Ok(())
+        }
+        _ => Err(CLIError::InvalidCommandError)
+    };
 }

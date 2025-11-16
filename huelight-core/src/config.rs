@@ -63,56 +63,42 @@ impl Config {
             .ok_or_else(|| CoreError::Config(ConfigError::ConfigDirectoryNotFoundError))?
             .join("huelightcli");
 
-        let create_dir_result = file_handler.create_dir_all(&config_dir).await;
-
-        // Log error if directory creation failed
-        if let Err(e) = &create_dir_result {
-            let error_message = format!("Failed to create config directory: {:?}", e);
+        // Create the directory
+        file_handler.create_dir_all(&config_dir).await.map_err(|err| {
+            let error_message = format!("Failed to create config directory: {:?}", err);
             logger.log(error_message.as_str());
-            anyhow::bail!(error_message);
-        }
+            CoreError::Config(ConfigError::ConfigDirectoryCreateError)
+        })?;
 
+        // Make sure we can serialize the config
         let config_path = config_dir.join("config.json");
         let config_json = serde_json::to_string(self).map_err(|err| {
             logger.log(format!("Failed to serialize config: {:?}", err).as_str());
             CoreError::Serialization(err)
         })?;
 
-
-        if let Some(config_json) = &config_json.as_ref().ok() {
-            let res = file_handler
-                .write_file(config_path.to_str().unwrap(), config_json)
-                .await
-                .context("writing config file");
-
-            if let Err(e) = &res {
-                let error_message = format!("Failed to write config file: {:?}", e);
-                logger.log(error_message.as_str());
-                anyhow::bail!(error_message);
-            }
-
-            logger.log(
+        // Write the config file using the serialized config
+        file_handler
+            .write_file(config_path.to_str().unwrap(), config_json.as_str())
+            .await?;
+        
+        logger.log(
                 format!(
                     "Saving config to {config_path}: {config_json}",
                     config_path = config_path.display(),
                     config_json = config_json
                 )
-                .as_str(),
-            );
-        } else {
-            anyhow::bail!("Failed to serialize config");
-        }
-
+                .as_str());
         Ok(())
     }
 
     pub async fn load(file_handler: &impl FileHandler) -> Result<Config, CoreError> {
         let config_dir = dirs::config_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?
+            .ok_or_else(|| CoreError::Config(ConfigError::ConfigDirectoryNotFoundError))?
             .join("huelightcli");
         let path = config_dir.join("config.json");
         let config_json = file_handler.read_file(path.to_str().unwrap()).await?;
-        serde_json::from_str(config_json.as_str()).context("Error parsing config file")
+        serde_json::from_str(config_json.as_str()).map_err(CoreError::Serialization)
     }
 }
 

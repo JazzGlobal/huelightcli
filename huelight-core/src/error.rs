@@ -23,8 +23,11 @@ pub enum CoreError {
 
 #[derive(Debug, Error)]
 pub enum ConfigError {
-    #[error("config directory not found and could not be created")]
+    #[error("config directory not found")]
     ConfigDirectoryNotFoundError,
+
+    #[error("failed to create config directory")]
+    ConfigDirectoryCreateError,
 }
 
 #[derive(Debug, Error)]
