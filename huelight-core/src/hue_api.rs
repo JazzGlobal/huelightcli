@@ -105,6 +105,7 @@ mod tests {
     use super::{async_create_user, async_get_all_lights};
     use crate::client::HueClient;
     use crate::logger::{ILogger, Logger};
+    use crate::models::LightState;
 
     #[tokio::test]
     async fn async_create_user_successresponse_logs_username() {
@@ -226,18 +227,33 @@ mod tests {
         let result = async_get_all_lights("127.0.0.1", "", &fake_client, &mut logger).await;
 
         // Assert
-        assert!(result.is_ok());
-        assert!(
-            logger
-                .entries()
-                .iter()
-                .any(|entry| entry.contains("Light ID: 1, On: true, Name: Living Room Light, Type: Extended color light, Brightness: 200, Hue: 50000, Saturation: 150"))
-        );
-        assert!(
-            logger
-                .entries()
-                .iter()
-                .any(|entry| entry.contains("Light ID: 2, On: false, Name: Bedroom Light, Type: Dimmable light, Brightness: 100, Hue: 30000, Saturation: 100"))
-        );
+
+        let parsed_result = result.unwrap();
+        let expected_light1 = crate::models::Light {
+            name: "Living Room Light".to_string(),
+            _type: "Extended color light".to_string(),
+            state: LightState {
+                on: Some(true),
+                brightness: Some(200),
+                hue: Some(50000),
+                saturation: Some(150),
+            },
+        };
+        let expected_light2 = crate::models::Light {
+            name: "Bedroom Light".to_string(),
+            _type: "Dimmable light".to_string(),
+            state: LightState {
+                on: Some(false),
+                brightness: Some(100),
+                hue: Some(30000),
+                saturation: Some(100),
+            },
+        };
+
+        let light1 = parsed_result.0.get(&1).unwrap();
+        let light2 = parsed_result.0.get(&2).unwrap();
+
+        assert_eq!(light1, &expected_light1);
+        assert_eq!(light2, &expected_light2);
     }
 }
