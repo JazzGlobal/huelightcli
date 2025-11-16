@@ -1,6 +1,5 @@
 #[derive(Debug, thiserror::Error)]
-pub enum CLIError 
-{
+pub enum CLIError {
     #[error("Invalid command error")]
     InvalidCommandError,
 

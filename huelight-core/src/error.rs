@@ -4,7 +4,7 @@ use thiserror::Error;
 pub enum CoreError {
     #[error("network error talking to Hue Bridge: {0}")]
     Network(#[from] reqwest::Error),
-    
+
     #[error("Serialization error")]
     Serialization(#[from] serde_json::Error),
 
@@ -40,13 +40,10 @@ pub enum HueBridgeError {
 
     #[error("unauthorized user")]
     UnauthorizedUser,
-    
+
     #[error("unexpected JSON")]
     UnexpectedJSON,
 
     #[error("bridge error {code}: {message}")]
-    Other {
-        code: String,
-        message: String
-    }
+    Other { code: String, message: String },
 }

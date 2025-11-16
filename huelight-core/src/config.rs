@@ -1,9 +1,9 @@
-use std::path::Path;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 use tokio::fs;
 
+use crate::error::{ConfigError, CoreError};
 use crate::logger::ILogger;
-use crate::error::{CoreError, ConfigError};
 
 pub trait FileHandler {
     fn read_file(
@@ -18,7 +18,7 @@ pub trait FileHandler {
     fn create_dir_all(
         &self,
         path: &Path,
-    ) -> impl std::future::Future<Output =  Result<(), CoreError>> + Send;
+    ) -> impl std::future::Future<Output = Result<(), CoreError>> + Send;
 }
 
 #[derive(Default)]
@@ -26,16 +26,22 @@ pub struct TokioFileHandler;
 
 impl FileHandler for TokioFileHandler {
     async fn read_file(&self, path: &str) -> Result<String, CoreError> {
-        fs::read_to_string(path).await.map_err(CoreError::FileHandlerError)
+        fs::read_to_string(path)
+            .await
+            .map_err(CoreError::FileHandlerError)
     }
 
     async fn write_file(&self, path: &str, content: &str) -> Result<(), CoreError> {
-        fs::write(path, content).await.map_err(CoreError::FileHandlerError)?;
+        fs::write(path, content)
+            .await
+            .map_err(CoreError::FileHandlerError)?;
         Ok(())
     }
 
-    async fn create_dir_all(&self, path: &Path) ->  Result<(), CoreError> {
-        fs::create_dir_all(path).await.map_err(CoreError::FileHandlerError)?;
+    async fn create_dir_all(&self, path: &Path) -> Result<(), CoreError> {
+        fs::create_dir_all(path)
+            .await
+            .map_err(CoreError::FileHandlerError)?;
         Ok(())
     }
 }
@@ -64,11 +70,14 @@ impl Config {
             .join("huelightcli");
 
         // Create the directory
-        file_handler.create_dir_all(&config_dir).await.map_err(|err| {
-            let error_message = format!("Failed to create config directory: {:?}", err);
-            logger.log(error_message.as_str());
-            CoreError::Config(ConfigError::ConfigDirectoryCreateError)
-        })?;
+        file_handler
+            .create_dir_all(&config_dir)
+            .await
+            .map_err(|err| {
+                let error_message = format!("Failed to create config directory: {:?}", err);
+                logger.log(error_message.as_str());
+                CoreError::Config(ConfigError::ConfigDirectoryCreateError)
+            })?;
 
         // Make sure we can serialize the config
         let config_path = config_dir.join("config.json");
@@ -81,14 +90,15 @@ impl Config {
         file_handler
             .write_file(config_path.to_str().unwrap(), config_json.as_str())
             .await?;
-        
+
         logger.log(
-                format!(
-                    "Saving config to {config_path}: {config_json}",
-                    config_path = config_path.display(),
-                    config_json = config_json
-                )
-                .as_str());
+            format!(
+                "Saving config to {config_path}: {config_json}",
+                config_path = config_path.display(),
+                config_json = config_json
+            )
+            .as_str(),
+        );
         Ok(())
     }
 
@@ -108,7 +118,9 @@ mod tests {
 
     use super::Config;
     use crate::{
-        config::FileHandler, error::CoreError, logger::{ILogger, Logger}
+        config::FileHandler,
+        error::CoreError,
+        logger::{ILogger, Logger},
     };
 
     #[tokio::test]
@@ -200,7 +212,9 @@ mod tests {
             }
 
             async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
-                 Err(CoreError::UnexpectedResponse("create directory error".to_string()))
+                Err(CoreError::UnexpectedResponse(
+                    "create directory error".to_string(),
+                ))
             }
         }
 

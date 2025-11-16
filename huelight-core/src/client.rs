@@ -6,7 +6,8 @@ pub trait HueClient {
         url: &str,
         body: &str,
     ) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
-    fn get(&self, url: &str) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
+    fn get(&self, url: &str)
+    -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
     fn put_json(
         &self,
         url: &str,
@@ -34,7 +35,12 @@ impl HueClient for ReqwestHueClient {
     }
 
     async fn get(&self, url: &str) -> Result<String, CoreError> {
-        let res = self.client.get(url).send().await.map_err(CoreError::Network)?;
+        let res = self
+            .client
+            .get(url)
+            .send()
+            .await
+            .map_err(CoreError::Network)?;
         Ok(res.text().await?)
     }
 

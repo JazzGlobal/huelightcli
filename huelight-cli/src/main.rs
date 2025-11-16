@@ -85,25 +85,22 @@ async fn main() -> Result<(), CLIError> {
         client: reqwest::Client::new(),
     };
 
-    let config: Result<hue::config::Config, CLIError> =
-        if let Some(name) = cli.subcommand_name() {
-            if !name.is_empty() && name != "setup" {
-                    Ok(hue::config::Config::load(&hue::config::TokioFileHandler).await?)
-            }
-            else {
-                Err(CLIError::ConfigNotLoaded)
-            }
-        }
-        else {
+    let config: Result<hue::config::Config, CLIError> = if let Some(name) = cli.subcommand_name() {
+        if !name.is_empty() && name != "setup" {
+            Ok(hue::config::Config::load(&hue::config::TokioFileHandler).await?)
+        } else {
             Err(CLIError::ConfigNotLoaded)
-        };
+        }
+    } else {
+        Err(CLIError::ConfigNotLoaded)
+    };
 
     if (config.is_err()
         || config.as_ref().unwrap().username.is_empty()
         || config.as_ref().unwrap().bridge_ip.is_empty())
         && cli.subcommand_name() != Some("setup")
     {
-       return Err(CLIError::ConfigNotLoaded);
+        return Err(CLIError::ConfigNotLoaded);
     }
 
     // if we get here, we have a valid config or are running setup
@@ -220,7 +217,7 @@ async fn main() -> Result<(), CLIError> {
                             &mut logger,
                         )
                         .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                        .map_err(CLIError::HueLightCoreError)?;
                     }
 
                     Ok(())
@@ -256,7 +253,7 @@ async fn main() -> Result<(), CLIError> {
 
                     Ok(())
                 }
-                _ => Err(CLIError::InvalidCommandError)
+                _ => Err(CLIError::InvalidCommandError),
             }
         }
         Some(("setup", setup_cmd)) => {
@@ -280,8 +277,7 @@ async fn main() -> Result<(), CLIError> {
                 .await
                 .map_err(CLIError::HueLightCoreError)?;
             Ok(())
-
         }
-        _ => Err(CLIError::InvalidCommandError)
+        _ => Err(CLIError::InvalidCommandError),
     };
 }

@@ -23,19 +23,21 @@ pub async fn async_create_user(
     let url = format!("http://{}/api", ip_address);
     let res = client.post_json(&url, &json_user).await?;
 
-    let parsed: CreateUserResponse =
-        serde_json::from_str(&res).map_err(|err| {
-            logger.log(
-                &format!("Failed to parse CreateUserResponse JSON: {err}. Raw(truncated): {}", &res[..res.len().min(200)])
-            );
-            CoreError::Serialization(err)
-        })?;
+    let parsed: CreateUserResponse = serde_json::from_str(&res).map_err(|err| {
+        logger.log(&format!(
+            "Failed to parse CreateUserResponse JSON: {err}. Raw(truncated): {}",
+            &res[..res.len().min(200)]
+        ));
+        CoreError::Serialization(err)
+    })?;
 
     match parsed.first() {
         Some(CreateUserEntry::Success { success }) => {
             let message = format!("User created successfully! Username: {}", success.username);
             logger.log(&message);
-            Ok(User { devicetype: success.username.clone() })
+            Ok(User {
+                devicetype: success.username.clone(),
+            })
         }
         Some(CreateUserEntry::Error { error }) => {
             let message = format!(
@@ -43,15 +45,19 @@ pub async fn async_create_user(
                 error.address, error.description
             );
             logger.log(&message);
-            
+
             match error.address.as_str() {
                 "101" => Err(CoreError::Bridge(HueBridgeError::LinkButtonNotPressed)),
-                _default => Err(CoreError::Bridge(HueBridgeError::Other { code: error.address.clone(), message: error.description.clone() }))
+                _default => Err(CoreError::Bridge(HueBridgeError::Other {
+                    code: error.address.clone(),
+                    message: error.description.clone(),
+                })),
             }
         }
         None => {
-            let message = "User could not be created. The Hue Bridge returned an unrecognized JSON format.";
-            logger.log(&message);
+            let message =
+                "User could not be created. The Hue Bridge returned an unrecognized JSON format.";
+            logger.log(message);
             Err(CoreError::UnexpectedResponse(message.to_string()))
         }
     }
@@ -69,13 +75,13 @@ pub async fn async_get_all_lights(
 
     let url = format!("http://{}/api/{}/lights", ip_address, username);
     let res = client.get(&url).await?;
-    let parsed = serde_json::from_str::<LightResponse>(&res)
-        .map_err(|err| {
-            logger.log(
-                &format!("Failed to parse lights JSON: {err}. Raw (truncated): {}", &res[..res.len().min(200)]),
-            );
-            CoreError::Serialization(err)
-        })?;
+    let parsed = serde_json::from_str::<LightResponse>(&res).map_err(|err| {
+        logger.log(&format!(
+            "Failed to parse lights JSON: {err}. Raw (truncated): {}",
+            &res[..res.len().min(200)]
+        ));
+        CoreError::Serialization(err)
+    })?;
 
     Ok(parsed)
 }
@@ -103,8 +109,10 @@ pub async fn async_set_light_state(
         light_id, res
     ));
 
-    Ok(format!("Response from setting light {} state: {}",
-        light_id, res))
+    Ok(format!(
+        "Response from setting light {} state: {}",
+        light_id, res
+    ))
 }
 
 #[cfg(test)]
