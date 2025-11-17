@@ -34,15 +34,13 @@ impl FileHandler for TokioFileHandler {
     async fn write_file(&self, path: &str, content: &str) -> Result<(), CoreError> {
         fs::write(path, content)
             .await
-            .map_err(CoreError::FileHandlerError)?;
-        Ok(())
+            .map_err(CoreError::FileHandlerError)
     }
 
     async fn create_dir_all(&self, path: &Path) -> Result<(), CoreError> {
         fs::create_dir_all(path)
             .await
-            .map_err(CoreError::FileHandlerError)?;
-        Ok(())
+            .map_err(CoreError::FileHandlerError)
     }
 }
 
