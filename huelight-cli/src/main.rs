@@ -86,14 +86,11 @@ async fn main() -> Result<(), CLIError> {
         client: reqwest::Client::new(),
     };
 
-    let config: Result<hue::config::Config, CLIError> = if let Some(name) = cli.subcommand_name() {
-        if !name.is_empty() && name != "setup" {
+    let config: Result<hue::config::Config, CLIError> = match cli.subcommand_name() {
+        Some(name) if name != "setup" => {
             Ok(hue::config::Config::load(&hue::config::TokioFileHandler).await?)
-        } else {
-            Err(CLIError::ConfigNotLoaded)
         }
-    } else {
-        Err(CLIError::ConfigNotLoaded)
+        _ => Err(CLIError::ConfigNotLoaded),
     };
 
     if config
