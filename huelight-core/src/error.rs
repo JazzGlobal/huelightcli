@@ -8,16 +8,16 @@ pub enum CoreError {
     #[error("serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
-    #[error("File handler IO error: {0}")]
+    #[error("file handler IO error: {0}")]
     FileHandlerError(#[from] std::io::Error),
 
-    #[error("Hue bridge returned an error: {0}")]
+    #[error("hue bridge returned an error: {0}")]
     Bridge(#[from] HueBridgeError),
 
-    #[error("Config error occurred: {0}")]
+    #[error("config error occurred: {0}")]
     Config(#[from] ConfigError),
 
-    #[error("Unexpected response from Hue Bridge: {0}")]
+    #[error("unexpected response from Hue Bridge: {0}")]
     UnexpectedResponse(String),
 }
 
@@ -35,7 +35,7 @@ pub enum HueBridgeError {
     #[error("link button not pressed")]
     LinkButtonNotPressed,
 
-    #[error("Given light wasn't available")]
+    #[error("specified light not found")]
     LightDoesntExist,
 
     #[error("unauthorized user")]
