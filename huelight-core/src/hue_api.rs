@@ -45,11 +45,10 @@ pub async fn async_create_user(
                 error._type, error.address, error.description
             );
             logger.log(&message);
-            dbg!(error);
             match error._type {
                 101 => Err(CoreError::Bridge(HueBridgeError::LinkButtonNotPressed)),
                 _default => Err(CoreError::Bridge(HueBridgeError::Other {
-                    code: error.address.to_string(),
+                    code: error._type.to_string(),
                     message: error.description.clone(),
                 })),
             }

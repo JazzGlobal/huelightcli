@@ -5,7 +5,7 @@ pub enum CoreError {
     #[error("network error talking to Hue Bridge: {0}")]
     Network(#[from] reqwest::Error),
 
-    #[error("Serialization error")]
+    #[error("serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
 
     #[error("File handler IO error: {0}")]
