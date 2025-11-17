@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn save_config_write_fail_expect_fail_log() {
+    async fn save_config_write_fail_expect_error_from_write_error() {
         // Arrange
         let config = Config::new("192.168.1.1".to_string(), "user".to_string());
         let mut logger = Logger::default();
@@ -172,7 +172,7 @@ mod tests {
             }
 
             async fn write_file(&self, _path: &str, _content: &str) -> Result<(), CoreError> {
-                Err(CoreError::UnexpectedResponse("error".to_string()))
+                Err(CoreError::UnexpectedResponse("write failed".to_string()))
             }
 
             async fn create_dir_all(&self, _path: &Path) -> Result<(), CoreError> {
@@ -184,11 +184,13 @@ mod tests {
         let result = config.save(&mut logger, &MockFileHandler).await;
 
         // Assert
-        assert!(matches!(result, Err(CoreError::UnexpectedResponse(_))))
+
+        // We expect the error 'write_file' encountered to bubble up.
+        assert!(matches!(result, Err(CoreError::UnexpectedResponse(msg)) if msg == "write failed"))
     }
 
     #[tokio::test]
-    async fn save_config_create_dir_failed_expect_fail_log() {
+    async fn save_config_create_dir_failed_expect_config_dir_create_error() {
         // Arrange
         let config = Config::new("192.168.1.1".to_string(), "user".to_string());
         let mut logger = Logger::default();
@@ -223,7 +225,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn load_config_success_expect_success_log() {
+    async fn load_config_success_expect_valid_config() {
         // Arrange
         #[derive(Default)]
         struct MockFileHandler;
@@ -251,7 +253,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn load_config_fail_expect_fail_log() {
+    async fn load_config_fail_expect_serialization_error() {
         // Arrange
         #[derive(Default)]
         struct MockFileHandler;
