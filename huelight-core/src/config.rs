@@ -119,7 +119,7 @@ mod tests {
     use super::Config;
     use crate::{
         config::FileHandler,
-        error::CoreError,
+        error::{ConfigError, CoreError},
         logger::{ILogger, Logger},
     };
 
@@ -184,13 +184,7 @@ mod tests {
         let result = config.save(&mut logger, &MockFileHandler).await;
 
         // Assert
-        assert!(result.is_err());
-        assert!(
-            logger
-                .entries()
-                .iter()
-                .any(|entry| entry.contains("Failed to write config file"))
-        );
+        assert!(matches!(result, Err(CoreError::UnexpectedResponse(_))))
     }
 
     #[tokio::test]
@@ -222,13 +216,10 @@ mod tests {
         let result = config.save(&mut logger, &MockFileHandler).await;
 
         // Assert
-        assert!(result.is_err());
-        assert!(
-            logger
-                .entries()
-                .iter()
-                .any(|entry| entry.contains("Failed to create config directory"))
-        );
+        assert!(matches!(
+            result,
+            Err(CoreError::Config(ConfigError::ConfigDirectoryCreateError))
+        ));
     }
 
     #[tokio::test]
@@ -283,10 +274,9 @@ mod tests {
         }
 
         // Act
-        let _result = Config::load(&MockFileHandler).await;
+        let result = Config::load(&MockFileHandler).await;
 
         // Assert
-        let err = _result.expect_err("expected config parse to fail");
-        assert!(err.to_string().contains("Error parsing config file"));
+        assert!(matches!(result, Err(CoreError::Serialization(_))));
     }
 }

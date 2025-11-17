@@ -182,7 +182,7 @@ mod tests {
 
         // Act
         let result = async_create_user("127.0.0.1", "device", &fake_client, &mut logger).await;
-        
+
         // Assert
         assert!(matches!(
             result,
