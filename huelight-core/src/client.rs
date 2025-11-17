@@ -31,7 +31,7 @@ impl HueClient for ReqwestHueClient {
             .await
             .map_err(CoreError::Network)?;
 
-        Ok(res.text().await?)
+        res.text().await.map_err(CoreError::Network)
     }
 
     async fn get(&self, url: &str) -> Result<String, CoreError> {
@@ -41,7 +41,7 @@ impl HueClient for ReqwestHueClient {
             .send()
             .await
             .map_err(CoreError::Network)?;
-        Ok(res.text().await?)
+        res.text().await.map_err(CoreError::Network)
     }
 
     async fn put_json(&self, url: &str, body: &str) -> Result<String, CoreError> {
@@ -54,6 +54,6 @@ impl HueClient for ReqwestHueClient {
             .await
             .map_err(CoreError::Network)?;
 
-        Ok(res.text().await?)
+        res.text().await.map_err(CoreError::Network)
     }
 }
