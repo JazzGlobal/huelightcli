@@ -96,9 +96,9 @@ async fn main() -> Result<(), CLIError> {
         Err(CLIError::ConfigNotLoaded)
     };
 
-    if (config.is_err()
-        || config.as_ref().unwrap().username.is_empty()
-        || config.as_ref().unwrap().bridge_ip.is_empty())
+    if config
+        .as_ref()
+        .map_or(true, |c| c.username.is_empty() || c.bridge_ip.is_empty())
         && cli.subcommand_name() != Some("setup")
     {
         return Err(CLIError::ConfigNotLoaded);
