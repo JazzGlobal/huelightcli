@@ -9,6 +9,8 @@ pub struct SuccessDetail {
 
 #[derive(Debug, Deserialize)]
 pub struct ErrorDetail {
+    #[serde(rename = "type")]
+    pub _type: i32,
     pub address: String,
     pub description: String,
 }

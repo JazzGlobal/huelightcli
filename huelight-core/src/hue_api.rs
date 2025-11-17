@@ -41,15 +41,15 @@ pub async fn async_create_user(
         }
         Some(CreateUserEntry::Error { error }) => {
             let message = format!(
-                "Error creating user: {} - {}",
-                error.address, error.description
+                "Error creating user: {} - {} - {}",
+                error._type, error.address, error.description
             );
             logger.log(&message);
-
-            match error.address.as_str() {
-                "101" => Err(CoreError::Bridge(HueBridgeError::LinkButtonNotPressed)),
+            dbg!(error);
+            match error._type {
+                101 => Err(CoreError::Bridge(HueBridgeError::LinkButtonNotPressed)),
                 _default => Err(CoreError::Bridge(HueBridgeError::Other {
-                    code: error.address.clone(),
+                    code: error.address.to_string(),
                     message: error.description.clone(),
                 })),
             }
@@ -119,7 +119,7 @@ pub async fn async_set_light_state(
 mod tests {
     use super::{async_create_user, async_get_all_lights};
     use crate::client::HueClient;
-    use crate::error::CoreError;
+    use crate::error::{CoreError, HueBridgeError};
     use crate::logger::{ILogger, Logger};
     use crate::models::LightState;
 
@@ -182,15 +182,12 @@ mod tests {
 
         // Act
         let result = async_create_user("127.0.0.1", "device", &fake_client, &mut logger).await;
-
+        
         // Assert
-        assert!(result.is_ok());
-        assert!(
-            logger
-                .entries()
-                .iter()
-                .any(|entry| entry.contains("Error creating user: / - link button not pressed"))
-        );
+        assert!(matches!(
+            result,
+            Err(CoreError::Bridge(HueBridgeError::LinkButtonNotPressed))
+        ))
     }
 
     #[tokio::test]
