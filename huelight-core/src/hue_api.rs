@@ -104,15 +104,10 @@ pub async fn async_set_light_state(
     );
     let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
     let res = client.put_json(&url, &json_state).await?;
-    logger.log(&format!(
-        "Response from setting light {} state: {}",
-        light_id, res
-    ));
 
-    Ok(format!(
-        "Response from setting light {} state: {}",
-        light_id, res
-    ))
+    let message = format!("Response from setting light {} state: {}", light_id, res);
+    logger.log(&message);
+    Ok(message)
 }
 
 #[cfg(test)]
