@@ -1,5 +1,6 @@
 use hue::logger::{ILogger, Logger};
 use hue::models::LightState;
+use huelight_core::error::{CoreError, HueBridgeError};
 use huelight_core::{self as hue, client, hue_api};
 
 pub mod error;
@@ -218,6 +219,10 @@ async fn main() -> Result<(), CLIError> {
                         )
                         .await
                         .map_err(CLIError::HueLightCoreError)?;
+                    } else {
+                        return Err(CLIError::HueLightCoreError(CoreError::Bridge(
+                            HueBridgeError::LightDoesntExist,
+                        )));
                     }
 
                     Ok(())
