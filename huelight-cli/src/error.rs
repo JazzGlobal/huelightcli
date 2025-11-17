@@ -3,7 +3,7 @@ pub enum CLIError {
     #[error("Invalid command error")]
     InvalidCommandError,
 
-    #[error("An error occurred in the huelight-core crate")]
+    #[error("Core library error: {0}")]
     HueLightCoreError(#[from] huelight_core::error::CoreError),
 
     #[error("config file failed to load")]
