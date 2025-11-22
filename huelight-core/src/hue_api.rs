@@ -1,7 +1,8 @@
 use crate::client::HueClient;
 use crate::error::{CoreError, HueBridgeError};
 use crate::logger::ILogger;
-use crate::models::{CreateUserEntry, CreateUserResponse, LightResponse, LightState, User};
+use crate::models::createuser::{CreateUserEntry, CreateUserResponse, User};
+use crate::models::light::{LightResponse, LightState};
 
 pub async fn async_create_user(
     ip_address: &str,
@@ -115,7 +116,7 @@ mod tests {
     use crate::client::HueClient;
     use crate::error::{CoreError, HueBridgeError};
     use crate::logger::{ILogger, Logger};
-    use crate::models::LightState;
+    use crate::models::light::LightState;
 
     #[tokio::test]
     async fn async_create_user_successresponse_logs_username() {
@@ -236,7 +237,7 @@ mod tests {
         // Assert
 
         let parsed_result = result.unwrap();
-        let expected_light1 = crate::models::Light {
+        let expected_light1 = crate::models::light::Light {
             name: "Living Room Light".to_string(),
             _type: "Extended color light".to_string(),
             state: LightState {
@@ -246,7 +247,7 @@ mod tests {
                 saturation: Some(150),
             },
         };
-        let expected_light2 = crate::models::Light {
+        let expected_light2 = crate::models::light::Light {
             name: "Bedroom Light".to_string(),
             _type: "Dimmable light".to_string(),
             state: LightState {

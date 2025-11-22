@@ -1,5 +1,5 @@
 use hue::logger::{ILogger, Logger};
-use hue::models::LightState;
+use hue::models::light::LightState;
 use huelight_core::error::{CoreError, HueBridgeError};
 use huelight_core::{self as hue, client, hue_api};
 
