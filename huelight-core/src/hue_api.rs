@@ -15,7 +15,8 @@ pub async fn async_create_user(
      */
 
     let new_user = User {
-        devicetype: device_name.to_string(),
+        devicetype: Some(device_name.to_string()),
+        username: None,
     };
 
     let json_user = serde_json::to_string(&new_user).unwrap();
@@ -37,7 +38,8 @@ pub async fn async_create_user(
             let message = format!("User created successfully! Username: {}", success.username);
             logger.log(&message);
             Ok(User {
-                devicetype: success.username.clone(),
+                username: Some(success.username.clone()),
+                devicetype: None,
             })
         }
         Some(CreateUserEntry::Error { error }) => {

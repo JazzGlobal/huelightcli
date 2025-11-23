@@ -23,8 +23,36 @@ pub enum CreateUserEntry {
 
 #[derive(Serialize)]
 pub struct User {
-    pub devicetype: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub devicetype: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
 }
 
 // The whole response is an ARRAY of entries
 pub type CreateUserResponse = Vec<CreateUserEntry>;
+
+#[cfg(test)]
+mod tests {
+    use crate::models::createuser::User;
+
+    #[test]
+    pub fn user_serialization_omits_username_when_none() {
+        let user = User {
+            devicetype: Some("device".to_string()),
+            username: None,
+        };
+        let serialized = serde_json::to_string(&user).unwrap();
+        assert_eq!("{\"devicetype\":\"device\"}".to_string(), serialized);
+    }
+
+    #[test]
+    pub fn user_serialization_omits_devicetype_when_none() {
+        let user = User {
+            devicetype: None,
+            username: Some("myusername".to_string()),
+        };
+        let serialized = serde_json::to_string(&user).unwrap();
+        assert_eq!("{\"username\":\"myusername\"}".to_string(), serialized);
+    }
+}

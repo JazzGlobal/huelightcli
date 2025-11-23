@@ -15,6 +15,8 @@ async fn main() -> Result<(), CLIError> {
         .about("Control Philips Hue lights from the command line")
         .subcommand(
             clap::Command::new("setup")
+                .about("Provides commands necessary for configuring the Hue Bridge for light control.")
+                .subcommand(clap::Command::new("config")
                 .about("Configures the IP address and username for the Hue Bridge, saving them to a config file.")
                 .arg(
                     clap::Arg::new("ip_address")
@@ -28,6 +30,7 @@ async fn main() -> Result<(), CLIError> {
                         .short('u')
                         .help("Username for the Hue Bridge")
                 )
+            )
         )
         .subcommand(
         clap::Command::new("light")
@@ -258,27 +261,32 @@ async fn main() -> Result<(), CLIError> {
                 _ => Err(CLIError::InvalidCommandError),
             }
         }
-        Some(("setup", setup_cmd)) => {
-            // Setup command
-            let ip_address = setup_cmd
-                .get_one::<String>("ip_address")
-                .expect("IP address is required")
-                .to_string();
-            let username = setup_cmd
-                .get_one::<String>("username")
-                .expect("Username is required")
-                .to_string();
-            logger.log("Setting up configuration...");
-            logger.log(&format!(
-                "IP Address: {}, Username: {}",
-                ip_address, username
-            ));
+        Some(("setup", sub_setup_cmd)) => {
+            match sub_setup_cmd.subcommand() {
+                Some(("config", setup_config_cmd)) => {
+                    // Setup command
+                    let ip_address = setup_config_cmd
+                        .get_one::<String>("ip_address")
+                        .expect("IP address is required")
+                        .to_string();
+                    let username = setup_config_cmd
+                        .get_one::<String>("username")
+                        .expect("Username is required")
+                        .to_string();
+                    logger.log("Setting up configuration...");
+                    logger.log(&format!(
+                        "IP Address: {}, Username: {}",
+                        ip_address, username
+                    ));
 
-            huelight_core::config::Config::new(ip_address, username)
-                .save(&mut logger, &hue::config::TokioFileHandler)
-                .await
-                .map_err(CLIError::HueLightCoreError)?;
-            Ok(())
+                    huelight_core::config::Config::new(ip_address, username)
+                        .save(&mut logger, &hue::config::TokioFileHandler)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
+                    Ok(())
+                }
+                _ => Err(CLIError::InvalidCommandError),
+            }
         }
         _ => Err(CLIError::InvalidCommandError),
     };
