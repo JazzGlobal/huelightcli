@@ -64,8 +64,8 @@ This roadmap outlines the development plan for the HueLight backend, including t
 
 - [ ] Refine domain model structures  
 - [ ] Separate domain vs. Hue JSON DTOs  
-- [ ] Introduce unified error handling via `thiserror`:  
-  - [ ] `CoreError` (network, auth, config, not found, etc.)  
+- [X] Introduce unified error handling via `thiserror`:  
+  - [X] `CoreError` (network, auth, config, not found, etc.)  
 - [ ] Enhance `ReqwestHueClient`:  
   - [ ] Better timeouts  
   - [ ] Optional retries  
