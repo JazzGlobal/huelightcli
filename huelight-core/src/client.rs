@@ -1,24 +1,27 @@
-use crate::error::CoreError;
+use crate::error::{CoreError, CoreResult};
+use async_trait::async_trait;
 
+#[async_trait]
 pub trait HueClient {
-    fn post_json(
+    async fn post_json(
         &self,
         url: &str,
         body: &str,
-    ) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
-    fn get(&self, url: &str)
-    -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
-    fn put_json(
+    ) -> CoreResult<String>;
+    async fn get(&self, url: &str)
+    -> CoreResult<String>;
+    async fn put_json(
         &self,
         url: &str,
         body: &str,
-    ) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
+    ) -> CoreResult<String>;
 }
 
 pub struct ReqwestHueClient {
     pub client: reqwest::Client,
 }
 
+#[async_trait]
 impl HueClient for ReqwestHueClient {
     async fn post_json(&self, url: &str, body: &str) -> Result<String, CoreError> {
         // Implementation for sending a POST request with JSON body

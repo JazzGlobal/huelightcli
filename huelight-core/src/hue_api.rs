@@ -117,12 +117,14 @@ mod tests {
     use crate::error::{CoreError, HueBridgeError};
     use crate::logger::{ILogger, Logger};
     use crate::models::light::LightState;
+    use async_trait::async_trait;
 
     #[tokio::test]
     async fn async_create_user_successresponse_logs_username() {
         // Arrange
         struct FakeClient {}
 
+        #[async_trait]
         impl HueClient for FakeClient {
             async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 let fake_response = r#"[{"success":{"username":"testusername"}}]"#;
@@ -155,9 +157,11 @@ mod tests {
 
     #[tokio::test]
     async fn async_create_user_errorresponse_logs_error() {
+        use async_trait::async_trait;
         // Arrange
         struct FakeClient {}
 
+        #[async_trait]
         impl HueClient for FakeClient {
             async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 let fake_response = r#"[{"error":{"type":101,"address":"/","description":"link button not pressed"}}]"#;
@@ -187,9 +191,11 @@ mod tests {
 
     #[tokio::test]
     async fn async_get_all_lights_logs_light_information() {
+        use async_trait::async_trait;
         // Arrange
         struct FakeClient {}
 
+        #[async_trait]
         impl HueClient for FakeClient {
             async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
                 Ok("".to_string())
