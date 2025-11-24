@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+pub type CoreResult<T> = Result<T, CoreError>;
+
 #[derive(Debug, Error)]
 pub enum CoreError {
     #[error("network error talking to Hue Bridge: {0}")]
@@ -28,6 +30,9 @@ pub enum ConfigError {
 
     #[error("failed to create config directory")]
     ConfigDirectoryCreateError,
+
+    #[error("config path was invalid")]
+    ConfigPathInvalidError,
 }
 
 #[derive(Debug, Error)]
@@ -36,7 +41,7 @@ pub enum HueBridgeError {
     LinkButtonNotPressed,
 
     #[error("specified light not found")]
-    LightDoesntExist,
+    LightNotFound,
 
     #[error("unauthorized user")]
     UnauthorizedUser,
