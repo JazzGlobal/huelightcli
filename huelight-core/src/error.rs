@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+pub type CoreResult<T> = Result<T, CoreError>;
+
 #[derive(Debug, Error)]
 pub enum CoreError {
     #[error("network error talking to Hue Bridge: {0}")]
