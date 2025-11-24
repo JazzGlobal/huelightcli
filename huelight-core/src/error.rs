@@ -39,7 +39,7 @@ pub enum HueBridgeError {
     LinkButtonNotPressed,
 
     #[error("specified light not found")]
-    LightDoesntExist,
+    LightNotFound,
 
     #[error("unauthorized user")]
     UnauthorizedUser,
