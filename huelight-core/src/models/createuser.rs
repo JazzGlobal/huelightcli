@@ -21,6 +21,11 @@ pub enum CreateUserEntry {
     Error { error: ErrorDetail },
 }
 
+/// Represents a user in the Hue Bridge API.
+/// 
+/// This struct is used for both creating users and representing created users:
+/// - For user creation requests: set `devicetype` and leave `username` as `None`
+/// - For user creation responses: set `username` and leave `devicetype` as `None`
 #[derive(Serialize)]
 pub struct User {
     #[serde(skip_serializing_if = "Option::is_none")]
