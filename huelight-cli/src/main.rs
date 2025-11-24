@@ -264,7 +264,7 @@ async fn main() -> Result<(), CLIError> {
         Some(("setup", sub_setup_cmd)) => {
             match sub_setup_cmd.subcommand() {
                 Some(("config", setup_config_cmd)) => {
-                    // Setup command
+                    // Setup config command
                     let ip_address = setup_config_cmd
                         .get_one::<String>("ip_address")
                         .expect("IP address is required")
