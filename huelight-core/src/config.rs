@@ -86,7 +86,12 @@ impl Config {
 
         // Write the config file using the serialized config
         file_handler
-            .write_file(config_path.to_str().unwrap(), config_json.as_str())
+            .write_file(
+                config_path
+                    .to_str()
+                    .ok_or_else(|| CoreError::Config(ConfigError::ConfigFileNotFound))?,
+                config_json.as_str(),
+            )
             .await?;
 
         logger.log(
