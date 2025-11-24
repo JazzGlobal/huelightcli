@@ -89,7 +89,7 @@ impl Config {
             .write_file(
                 config_path
                     .to_str()
-                    .ok_or_else(|| CoreError::Config(ConfigError::ConfigFileNotFound))?,
+                    .ok_or_else(|| CoreError::Config(ConfigError::ConfigPathInvalidError))?,
                 config_json.as_str(),
             )
             .await?;
@@ -113,7 +113,7 @@ impl Config {
         let config_json = file_handler
             .read_file(
                 path.to_str()
-                    .ok_or_else(|| CoreError::Config(ConfigError::ConfigFileNotFound))?,
+                    .ok_or_else(|| CoreError::Config(ConfigError::ConfigPathInvalidError))?,
             )
             .await?;
         serde_json::from_str(config_json.as_str()).map_err(CoreError::Serialization)
