@@ -26,7 +26,7 @@ pub enum CreateUserEntry {
 /// This struct is used for both creating users and representing created users:
 /// - For user creation requests: set `devicetype` and leave `username` as `None`
 /// - For user creation responses: set `username` and leave `devicetype` as `None`
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct User {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub devicetype: Option<String>,
