@@ -28,6 +28,9 @@ pub enum ConfigError {
 
     #[error("failed to create config directory")]
     ConfigDirectoryCreateError,
+
+    #[error("could not find the config file")]
+    ConfigFileNotFound,
 }
 
 #[derive(Debug, Error)]

@@ -105,7 +105,12 @@ impl Config {
             .ok_or_else(|| CoreError::Config(ConfigError::ConfigDirectoryNotFoundError))?
             .join("huelightcli");
         let path = config_dir.join("config.json");
-        let config_json = file_handler.read_file(path.to_str().unwrap()).await?;
+        let config_json = file_handler
+            .read_file(
+                path.to_str()
+                    .ok_or_else(|| CoreError::Config(ConfigError::ConfigFileNotFound))?,
+            )
+            .await?;
         serde_json::from_str(config_json.as_str()).map_err(CoreError::Serialization)
     }
 }
