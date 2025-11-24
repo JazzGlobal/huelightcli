@@ -221,7 +221,7 @@ async fn main() -> Result<(), CLIError> {
                         .map_err(CLIError::HueLightCoreError)?;
                     } else {
                         return Err(CLIError::HueLightCoreError(CoreError::Bridge(
-                            HueBridgeError::LightDoesntExist,
+                            HueBridgeError::LightNotFound,
                         )));
                     }
 

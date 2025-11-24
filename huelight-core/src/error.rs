@@ -28,6 +28,9 @@ pub enum ConfigError {
 
     #[error("failed to create config directory")]
     ConfigDirectoryCreateError,
+
+    #[error("config path was invalid")]
+    ConfigPathInvalidError,
 }
 
 #[derive(Debug, Error)]
@@ -36,7 +39,7 @@ pub enum HueBridgeError {
     LinkButtonNotPressed,
 
     #[error("specified light not found")]
-    LightDoesntExist,
+    LightNotFound,
 
     #[error("unauthorized user")]
     UnauthorizedUser,
