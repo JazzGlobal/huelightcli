@@ -1,7 +1,8 @@
 use hue::logger::{ILogger, Logger};
 use hue::models::light::LightState;
+use huelight_core::client::ReqwestHueClient;
 use huelight_core::error::{CoreError, HueBridgeError};
-use huelight_core::{self as hue, client, hue_api};
+use huelight_core::{self as hue, hue_api};
 
 pub mod error;
 use error::CLIError;
@@ -85,9 +86,9 @@ async fn main() -> Result<(), CLIError> {
         .get_matches();
 
     let mut logger = Logger::default();
-    let client = client::ReqwestHueClient {
-        client: reqwest::Client::new(),
-    };
+
+    let r_client = reqwest::Client::new();
+    let client = ReqwestHueClient::new(r_client);
 
     let config: Result<hue::config::Config, CLIError> = match cli.subcommand_name() {
         Some(name) if name != "setup" => {
