@@ -9,7 +9,14 @@ pub trait HueClient {
 }
 
 pub struct ReqwestHueClient {
-    pub client: reqwest::Client,
+    client: reqwest::Client,
+}
+
+impl ReqwestHueClient {
+    // Require explicitly injecting a reqwest::Client.
+    pub fn new(client: reqwest::Client) -> Self {
+        Self { client }
+    }
 }
 
 #[async_trait]
