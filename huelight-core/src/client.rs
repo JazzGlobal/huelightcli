@@ -3,18 +3,9 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait HueClient {
-    async fn post_json(
-        &self,
-        url: &str,
-        body: &str,
-    ) -> CoreResult<String>;
-    async fn get(&self, url: &str)
-    -> CoreResult<String>;
-    async fn put_json(
-        &self,
-        url: &str,
-        body: &str,
-    ) -> CoreResult<String>;
+    async fn post_json(&self, url: &str, body: &str) -> CoreResult<String>;
+    async fn get(&self, url: &str) -> CoreResult<String>;
+    async fn put_json(&self, url: &str, body: &str) -> CoreResult<String>;
 }
 
 pub struct ReqwestHueClient {
