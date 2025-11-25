@@ -154,7 +154,6 @@ mod tests {
 
     #[tokio::test]
     async fn async_create_user_errorresponse_logs_error() {
-        use async_trait::async_trait;
         // Arrange
         struct FakeClient {}
 
@@ -188,7 +187,6 @@ mod tests {
 
     #[tokio::test]
     async fn async_get_all_lights_logs_light_information() {
-        use async_trait::async_trait;
         // Arrange
         struct FakeClient {}
 
