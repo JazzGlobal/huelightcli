@@ -14,10 +14,7 @@ pub async fn async_create_user(
      * Sends a post request to the input IP Address of the Hue Bridge to create a new user with the given device name.
      */
 
-    let new_user = User {
-        devicetype: Some(device_name.to_string()),
-        username: None,
-    };
+    let new_user = User::with_devicetype(device_name);
 
     let json_user = serde_json::to_string(&new_user).unwrap();
 
@@ -37,10 +34,8 @@ pub async fn async_create_user(
         Some(CreateUserEntry::Success { success }) => {
             let message = format!("User created successfully! Username: {}", success.username);
             logger.log(&message);
-            Ok(User {
-                username: Some(success.username.clone()),
-                devicetype: None,
-            })
+
+            Ok(User::with_username(success.username.clone()))
         }
         Some(CreateUserEntry::Error { error }) => {
             let message = format!(
