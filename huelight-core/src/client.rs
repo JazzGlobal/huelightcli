@@ -1,26 +1,20 @@
-use crate::error::CoreError;
+use crate::error::{CoreError, CoreResult};
+use async_trait::async_trait;
 
+#[async_trait]
 pub trait HueClient {
-    fn post_json(
-        &self,
-        url: &str,
-        body: &str,
-    ) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
-    fn get(&self, url: &str)
-    -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
-    fn put_json(
-        &self,
-        url: &str,
-        body: &str,
-    ) -> impl std::future::Future<Output = Result<String, CoreError>> + Send;
+    async fn post_json(&self, url: &str, body: &str) -> CoreResult<String>;
+    async fn get(&self, url: &str) -> CoreResult<String>;
+    async fn put_json(&self, url: &str, body: &str) -> CoreResult<String>;
 }
 
 pub struct ReqwestHueClient {
     pub client: reqwest::Client,
 }
 
+#[async_trait]
 impl HueClient for ReqwestHueClient {
-    async fn post_json(&self, url: &str, body: &str) -> Result<String, CoreError> {
+    async fn post_json(&self, url: &str, body: &str) -> CoreResult<String> {
         // Implementation for sending a POST request with JSON body
         let res = self
             .client
@@ -34,7 +28,7 @@ impl HueClient for ReqwestHueClient {
         res.text().await.map_err(CoreError::Network)
     }
 
-    async fn get(&self, url: &str) -> Result<String, CoreError> {
+    async fn get(&self, url: &str) -> CoreResult<String> {
         let res = self
             .client
             .get(url)
@@ -45,7 +39,7 @@ impl HueClient for ReqwestHueClient {
         res.text().await.map_err(CoreError::Network)
     }
 
-    async fn put_json(&self, url: &str, body: &str) -> Result<String, CoreError> {
+    async fn put_json(&self, url: &str, body: &str) -> CoreResult<String> {
         let res = self
             .client
             .put(url)
