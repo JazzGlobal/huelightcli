@@ -1,5 +1,5 @@
 use crate::client::HueClient;
-use crate::error::{CoreError, HueBridgeError};
+use crate::error::{CoreError, CoreResult, HueBridgeError};
 use crate::logger::ILogger;
 use crate::models::createuser::{CreateUserEntry, CreateUserResponse, User};
 use crate::models::light::{LightResponse, LightState};
@@ -9,7 +9,7 @@ pub async fn async_create_user(
     device_name: &str,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> Result<User, CoreError> {
+) -> CoreResult<User> {
     /*
      * Sends a post request to the input IP Address of the Hue Bridge to create a new user with the given device name.
      */
@@ -65,7 +65,7 @@ pub async fn async_get_all_lights(
     username: &str,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> Result<LightResponse, CoreError> {
+) -> CoreResult<LightResponse> {
     /*
      * Sends a get request to the input IP Address of the Hue Bridge to retrieve all lights connected to the bridge.
      */
@@ -90,7 +90,7 @@ pub async fn async_set_light_state(
     state: &LightState,
     client: &impl HueClient,
     logger: &mut impl ILogger,
-) -> Result<String, CoreError> {
+) -> CoreResult<String> {
     /*
      * Sends a PUT request to change the state of a specific light.
      */
@@ -111,7 +111,7 @@ pub async fn async_set_light_state(
 mod tests {
     use super::{async_create_user, async_get_all_lights};
     use crate::client::HueClient;
-    use crate::error::{CoreError, HueBridgeError};
+    use crate::error::{CoreError, CoreResult, HueBridgeError};
     use crate::logger::{ILogger, Logger};
     use crate::models::light::LightState;
     use async_trait::async_trait;
@@ -123,16 +123,16 @@ mod tests {
 
         #[async_trait]
         impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
+            async fn post_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
                 let fake_response = r#"[{"success":{"username":"testusername"}}]"#;
                 Ok(fake_response.to_string())
             }
 
-            async fn get(&self, _url: &str) -> Result<String, CoreError> {
+            async fn get(&self, _url: &str) -> CoreResult<String> {
                 Ok("".to_string())
             }
 
-            async fn put_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
+            async fn put_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
                 Ok("".to_string())
             }
         }
@@ -159,16 +159,16 @@ mod tests {
 
         #[async_trait]
         impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
+            async fn post_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
                 let fake_response = r#"[{"error":{"type":101,"address":"/","description":"link button not pressed"}}]"#;
                 Ok(fake_response.to_string())
             }
 
-            async fn get(&self, _url: &str) -> Result<String, CoreError> {
+            async fn get(&self, _url: &str) -> CoreResult<String> {
                 Ok("".to_string())
             }
 
-            async fn put_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
+            async fn put_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
                 Ok("".to_string())
             }
         }
@@ -192,12 +192,12 @@ mod tests {
 
         #[async_trait]
         impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
+            async fn post_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
                 Ok("".to_string())
             }
 
             // Setup get to return the expected lights JSON from Hue Bridge's /lights endpoint
-            async fn get(&self, _url: &str) -> Result<String, CoreError> {
+            async fn get(&self, _url: &str) -> CoreResult<String> {
                 let fake_response = r#"{
                     "1": {
                         "state": {
@@ -223,7 +223,7 @@ mod tests {
                 Ok(fake_response.to_string())
             }
 
-            async fn put_json(&self, _url: &str, _body: &str) -> Result<String, CoreError> {
+            async fn put_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
                 Ok("".to_string())
             }
         }
