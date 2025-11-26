@@ -113,8 +113,8 @@ mod tests {
     use crate::error::{CoreError, CoreResult, HueBridgeError};
     use crate::hue_api::async_set_light_state;
     use crate::logger::{ILogger, Logger};
-    use crate::models::hueerror::{ErrorDetail, HueResponseEntry};
-    use crate::models::light::{Light, LightState};
+    use crate::models::hueerror::HueResponseEntry;
+    use crate::models::light::LightState;
     use async_trait::async_trait;
 
     struct MockHueClient {
