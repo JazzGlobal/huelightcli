@@ -108,8 +108,6 @@ pub async fn async_set_light_state(
 
 #[cfg(test)]
 mod tests {
-    use core::panic;
-
     use super::{async_create_user, async_get_all_lights};
     use crate::client::HueClient;
     use crate::error::{CoreError, CoreResult, HueBridgeError};
