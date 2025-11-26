@@ -101,9 +101,9 @@ pub async fn async_set_light_state(
     );
     let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
     let res = client.put_json(&url, &json_state).await?;
-    let hue_error_response_list =
+    let hue_response_list =
         serde_json::from_str::<HueResponse>(&res).map_err(CoreError::Serialization)?;
-    Ok(hue_error_response_list)
+    Ok(hue_response_list)
 }
 
 #[cfg(test)]
