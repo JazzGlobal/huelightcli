@@ -2,6 +2,7 @@ use hue::logger::{ILogger, Logger};
 use hue::models::light::LightState;
 use huelight_core::client::ReqwestHueClient;
 use huelight_core::error::{CoreError, HueBridgeError};
+use huelight_core::models::hueerror::HueResponseEntry;
 use huelight_core::{self as hue, hue_api};
 
 pub mod error;
@@ -158,7 +159,6 @@ async fn main() -> Result<(), CLIError> {
                         light_id,
                         &light_state,
                         &client,
-                        &mut logger,
                     )
                     .await
                     .map_err(CLIError::HueLightCoreError)?;
@@ -181,7 +181,6 @@ async fn main() -> Result<(), CLIError> {
                         light_id,
                         &light_state,
                         &client,
-                        &mut logger,
                     )
                     .await
                     .map_err(CLIError::HueLightCoreError)?;
@@ -210,16 +209,33 @@ async fn main() -> Result<(), CLIError> {
                             on: Some(new_state),
                             ..Default::default()
                         };
-                        hue_api::async_set_light_state(
+                        let response = hue_api::async_set_light_state(
                             &c.bridge_ip,
                             &c.username,
                             light_id,
                             &light_state,
                             &client,
-                            &mut logger,
                         )
                         .await
                         .map_err(CLIError::HueLightCoreError)?;
+
+                        let result_of_toggle = response.iter().find_map(|entry| {
+                            if let HueResponseEntry::Success { success } = entry {
+                                if success.contains_key("/lights/2/state/on") {
+                                    return Some(success);
+                                }
+                                None
+                            } else {
+                                None
+                            }
+                        });
+
+                        let message = if result_of_toggle.is_none() {
+                            "Failed to toggle the input light!"
+                        } else {
+                            "Successfully toggled the light!"
+                        };
+                        logger.log(message);
                     } else {
                         return Err(CLIError::HueLightCoreError(CoreError::Bridge(
                             HueBridgeError::LightNotFound,
@@ -252,7 +268,6 @@ async fn main() -> Result<(), CLIError> {
                         light_id,
                         &l_state,
                         &client,
-                        &mut logger,
                     )
                     .await
                     .map_err(CLIError::HueLightCoreError)?;

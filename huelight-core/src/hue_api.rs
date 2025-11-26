@@ -2,6 +2,7 @@ use crate::client::HueClient;
 use crate::error::{CoreError, CoreResult, HueBridgeError};
 use crate::logger::ILogger;
 use crate::models::createuser::{CreateUserEntry, CreateUserResponse, User};
+use crate::models::hueerror::HueResponse;
 use crate::models::light::{LightResponse, LightState};
 
 pub async fn async_create_user(
@@ -89,8 +90,7 @@ pub async fn async_set_light_state(
     light_id: u32,
     state: &LightState,
     client: &impl HueClient,
-    logger: &mut impl ILogger,
-) -> CoreResult<String> {
+) -> CoreResult<HueResponse> {
     /*
      * Sends a PUT request to change the state of a specific light.
      */
@@ -101,46 +101,90 @@ pub async fn async_set_light_state(
     );
     let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
     let res = client.put_json(&url, &json_state).await?;
-
-    let message = format!("Response from setting light {} state: {}", light_id, res);
-    logger.log(&message);
-    Ok(message)
+    let hue_error_response_list =
+        serde_json::from_str::<HueResponse>(&res).map_err(CoreError::Serialization)?;
+    Ok(hue_error_response_list)
 }
 
 #[cfg(test)]
 mod tests {
+    use core::panic;
+
     use super::{async_create_user, async_get_all_lights};
     use crate::client::HueClient;
     use crate::error::{CoreError, CoreResult, HueBridgeError};
+    use crate::hue_api::async_set_light_state;
     use crate::logger::{ILogger, Logger};
-    use crate::models::light::LightState;
+    use crate::models::hueerror::{ErrorDetail, HueResponseEntry};
+    use crate::models::light::{Light, LightState};
     use async_trait::async_trait;
+
+    struct MockHueClient {
+        pub post_json_fn: Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>,
+        pub get_fn: Box<dyn Fn(&str) -> CoreResult<String> + Send + Sync>,
+        pub put_json_fn: Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>,
+    }
+
+    impl MockHueClient {
+        pub fn new() -> Self {
+            Self {
+                // You can make these default to an error instead if you prefer
+                post_json_fn: Box::new(|_, _| Ok("[]".to_string())),
+                get_fn: Box::new(|_| Ok("[]".to_string())),
+                put_json_fn: Box::new(|_, _| Ok("[]".to_string())),
+            }
+        }
+
+        pub fn with_post_json<F>(mut self, f: F) -> Self
+        where
+            F: Fn(&str, &str) -> CoreResult<String> + Send + Sync + 'static,
+        {
+            self.post_json_fn = Box::new(f);
+            self
+        }
+
+        pub fn with_get<F>(mut self, f: F) -> Self
+        where
+            F: Fn(&str) -> CoreResult<String> + Send + Sync + 'static,
+        {
+            self.get_fn = Box::new(f);
+            self
+        }
+
+        pub fn with_put_json<F>(mut self, f: F) -> Self
+        where
+            F: Fn(&str, &str) -> CoreResult<String> + Send + Sync + 'static,
+        {
+            self.put_json_fn = Box::new(f);
+            self
+        }
+    }
+
+    #[async_trait]
+    impl HueClient for MockHueClient {
+        async fn post_json(&self, url: &str, body: &str) -> CoreResult<String> {
+            (self.post_json_fn)(url, body)
+        }
+
+        async fn get(&self, url: &str) -> CoreResult<String> {
+            (self.get_fn)(url)
+        }
+
+        async fn put_json(&self, url: &str, body: &str) -> CoreResult<String> {
+            (self.put_json_fn)(url, body)
+        }
+    }
 
     #[tokio::test]
     async fn async_create_user_successresponse_logs_username() {
         // Arrange
-        struct FakeClient {}
-
-        #[async_trait]
-        impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
-                let fake_response = r#"[{"success":{"username":"testusername"}}]"#;
-                Ok(fake_response.to_string())
-            }
-
-            async fn get(&self, _url: &str) -> CoreResult<String> {
-                Ok("".to_string())
-            }
-
-            async fn put_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
-                Ok("".to_string())
-            }
-        }
+        let mock_hue_client = MockHueClient::new().with_post_json(|_url, _body| {
+            let fake_response = r#"[{"success":{"username":"testusername"}}]"#;
+            Ok(fake_response.to_string())
+        });
         let mut logger = Logger::default();
-        let fake_client = FakeClient {};
-
         // Act
-        let result = async_create_user("127.0.0.1", "device", &fake_client, &mut logger).await;
+        let result = async_create_user("127.0.0.1", "device", &mock_hue_client, &mut logger).await;
 
         // Assert
         assert!(result.is_ok());
@@ -155,28 +199,16 @@ mod tests {
     #[tokio::test]
     async fn async_create_user_errorresponse_logs_error() {
         // Arrange
-        struct FakeClient {}
+        let mock_hue_client = MockHueClient::new().with_post_json(|_url, _body| {
+            let fake_response =
+                r#"[{"error":{"type":101,"address":"/","description":"link button not pressed"}}]"#;
+            Ok(fake_response.to_string())
+        });
 
-        #[async_trait]
-        impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
-                let fake_response = r#"[{"error":{"type":101,"address":"/","description":"link button not pressed"}}]"#;
-                Ok(fake_response.to_string())
-            }
-
-            async fn get(&self, _url: &str) -> CoreResult<String> {
-                Ok("".to_string())
-            }
-
-            async fn put_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
-                Ok("".to_string())
-            }
-        }
         let mut logger = Logger::default();
-        let fake_client = FakeClient {};
 
         // Act
-        let result = async_create_user("127.0.0.1", "device", &fake_client, &mut logger).await;
+        let result = async_create_user("127.0.0.1", "device", &mock_hue_client, &mut logger).await;
 
         // Assert
         assert!(matches!(
@@ -188,17 +220,8 @@ mod tests {
     #[tokio::test]
     async fn async_get_all_lights_logs_light_information() {
         // Arrange
-        struct FakeClient {}
-
-        #[async_trait]
-        impl HueClient for FakeClient {
-            async fn post_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
-                Ok("".to_string())
-            }
-
-            // Setup get to return the expected lights JSON from Hue Bridge's /lights endpoint
-            async fn get(&self, _url: &str) -> CoreResult<String> {
-                let fake_response = r#"{
+        let mock_hue_client = MockHueClient::new().with_get(|_url| {
+            let fake_response = r#"{
                     "1": {
                         "state": {
                             "on": true,
@@ -220,20 +243,14 @@ mod tests {
                         "type": "Dimmable light"
                     }
                 }"#;
-                Ok(fake_response.to_string())
-            }
-
-            async fn put_json(&self, _url: &str, _body: &str) -> CoreResult<String> {
-                Ok("".to_string())
-            }
-        }
+            Ok(fake_response.to_string())
+        });
 
         let mut logger = Logger::default();
-        let fake_client = FakeClient {};
 
         // Act
         // The username doesn't matter because the FakeClient doesn't use it.
-        let result = async_get_all_lights("127.0.0.1", "", &fake_client, &mut logger).await;
+        let result = async_get_all_lights("127.0.0.1", "", &mock_hue_client, &mut logger).await;
 
         // Assert
 
@@ -264,5 +281,50 @@ mod tests {
 
         assert_eq!(light1, &expected_light1);
         assert_eq!(light2, &expected_light2);
+    }
+
+    #[tokio::test]
+    async fn async_set_light_state_invalid_response_returns_serialization_error() {
+        // Arrange
+        let mock_hue_client = MockHueClient::new()
+            .with_put_json(|url, body| Ok("this cannot be serialized".to_string()));
+
+        let state = LightState::default();
+
+        // Act
+        let result =
+            async_set_light_state("ipaddress", "username", 1, &state, &mock_hue_client).await;
+
+        // Assert
+        assert!(matches!(result, Err(CoreError::Serialization(_))));
+    }
+
+    #[tokio::test]
+    async fn async_set_light_state_valid_response_returns_model() {
+        // Arrange
+        let mock_hue_client = MockHueClient::new().with_put_json(|url, body| {
+            let serialized_response = "[ { \"error\": { \"type\": 7, \"address\": \"/lights/2/state/bri\", \"description\": \"invalid value, null,, for parameter, bri\" } }, { \"success\": { \"/lights/2/state/on\": false } }]";
+            Ok(serialized_response.to_string())
+        });
+
+        let state = LightState::default();
+
+        // Act
+        let result = async_set_light_state("ipaddress", "username", 1, &state, &mock_hue_client)
+            .await
+            .unwrap();
+
+        // Assert
+        assert_eq!(2, result.len());
+
+        let has_success = result
+            .iter()
+            .any(|e| matches!(e, HueResponseEntry::Success { .. }));
+        let has_error = result
+            .iter()
+            .any(|e| matches!(e, HueResponseEntry::Error { .. }));
+
+        assert!(has_success);
+        assert!(has_error);
     }
 }
