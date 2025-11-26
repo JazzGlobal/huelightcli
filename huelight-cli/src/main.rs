@@ -218,10 +218,11 @@ async fn main() -> Result<(), CLIError> {
                         )
                         .await
                         .map_err(CLIError::HueLightCoreError)?;
-
+                        
+                        let success_str = format!("/lights/{}/state/on", light_id);
                         let result_of_toggle = response.iter().find_map(|entry| {
                             if let HueResponseEntry::Success { success } = entry {
-                                if success.contains_key("/lights/2/state/on") {
+                                if success.contains_key(&success_str) {
                                     return Some(success);
                                 }
                                 None
