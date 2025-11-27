@@ -130,7 +130,6 @@ mod tests {
     impl MockHueClient {
         pub fn new() -> Self {
             Self {
-                // You can make these default to an error instead if you prefer
                 post_json_fn: Box::new(|_, _| Ok("[]".to_string())),
                 get_fn: Box::new(|_| Ok("[]".to_string())),
                 put_json_fn: Box::new(|_, _| Ok("[]".to_string())),
