@@ -124,7 +124,7 @@ mod tests {
     struct MockHueClient {
         pub post_json_fn: PostJsonFn,
         pub get_fn: GetFn,
-        pub put_json_fn: PutJsonFn
+        pub put_json_fn: PutJsonFn,
     }
 
     impl MockHueClient {
