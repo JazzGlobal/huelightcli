@@ -140,7 +140,7 @@ mod tests {
             }
         }
 
-        /// Provies a means to implement mocked behavior to MockHueClient.post_json
+        /// Provides a means to implement mocked behavior to MockHueClient.post_json
         pub fn with_post_json<F>(mut self, f: F) -> Self
         where
             F: Fn(&str, &str) -> CoreResult<String> + Send + Sync + 'static,
@@ -149,7 +149,7 @@ mod tests {
             self
         }
 
-        /// Provies a means to implement mocked behavior to MockHueClient.get
+        /// Provides a means to implement mocked behavior to MockHueClient.get
         pub fn with_get<F>(mut self, f: F) -> Self
         where
             F: Fn(&str) -> CoreResult<String> + Send + Sync + 'static,
@@ -158,7 +158,7 @@ mod tests {
             self
         }
 
-        /// Provies a means to implement mocked behavior to MockHueClient.put_json
+        /// Provides a means to implement mocked behavior to MockHueClient.put_json
         pub fn with_put_json<F>(mut self, f: F) -> Self
         where
             F: Fn(&str, &str) -> CoreResult<String> + Send + Sync + 'static,
