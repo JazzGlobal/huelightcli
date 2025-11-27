@@ -117,8 +117,11 @@ mod tests {
     use crate::models::light::{Light, LightState};
     use async_trait::async_trait;
 
+    /// Closure used to mock out behavior in the MockHueClient for HueClient.get
     pub type GetFn = Box<dyn Fn(&str) -> CoreResult<String> + Send + Sync>;
+    /// Closure used to mock out behavior in the MockHueClient for HueClient.post_json
     pub type PostJsonFn = Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>;
+    /// Closure used to mock out behavior in the MockHueClient for HueClient.put_json
     pub type PutJsonFn = Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>;
 
     struct MockHueClient {
@@ -128,6 +131,7 @@ mod tests {
     }
 
     impl MockHueClient {
+        /// Initializes a new MockHueClient with 'Ok' returns for get, put_json, and post_json.
         pub fn new() -> Self {
             Self {
                 post_json_fn: Box::new(|_, _| Ok("[]".to_string())),
@@ -136,6 +140,7 @@ mod tests {
             }
         }
 
+        /// Provies a means to implement mocked behavior to MockHueClient.post_json
         pub fn with_post_json<F>(mut self, f: F) -> Self
         where
             F: Fn(&str, &str) -> CoreResult<String> + Send + Sync + 'static,
@@ -144,6 +149,7 @@ mod tests {
             self
         }
 
+        /// Provies a means to implement mocked behavior to MockHueClient.get
         pub fn with_get<F>(mut self, f: F) -> Self
         where
             F: Fn(&str) -> CoreResult<String> + Send + Sync + 'static,
@@ -152,6 +158,7 @@ mod tests {
             self
         }
 
+        /// Provies a means to implement mocked behavior to MockHueClient.put_json
         pub fn with_put_json<F>(mut self, f: F) -> Self
         where
             F: Fn(&str, &str) -> CoreResult<String> + Send + Sync + 'static,
