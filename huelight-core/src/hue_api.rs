@@ -260,27 +260,25 @@ mod tests {
         let result = async_get_all_lights("127.0.0.1", "", &mock_hue_client, &mut logger).await;
 
         // Assert
-
         let parsed_result = result.unwrap();
         let expected_light1 = Light {
             name: "Living Room Light".to_string(),
             _type: "Extended color light".to_string(),
-            state: LightState {
-                on: Some(true),
-                brightness: Some(200),
-                hue: Some(50000),
-                saturation: Some(150),
-            },
+            state: LightState::default()
+                .with_on(true)
+                .with_brightness(200)
+                .with_hue(50000)
+                .with_saturation(150),
         };
+
         let expected_light2 = Light {
             name: "Bedroom Light".to_string(),
             _type: "Dimmable light".to_string(),
-            state: LightState {
-                on: Some(false),
-                brightness: Some(100),
-                hue: Some(30000),
-                saturation: Some(100),
-            },
+            state: LightState::default()
+                .with_on(false)
+                .with_brightness(100)
+                .with_hue(30000)
+                .with_saturation(100),
         };
 
         let light1 = parsed_result.0.get(&1).unwrap();

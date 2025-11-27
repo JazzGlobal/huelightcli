@@ -149,10 +149,7 @@ async fn main() -> Result<(), CLIError> {
                         .parse::<u32>()
                         .expect("Light ID must be a number");
                     println!("Turning light {} on...", light_id);
-                    let light_state = LightState {
-                        on: Some(true),
-                        ..Default::default()
-                    };
+                    let light_state = LightState::default().with_on(true);
                     hue_api::async_set_light_state(
                         &c.bridge_ip,
                         &c.username,
@@ -171,10 +168,7 @@ async fn main() -> Result<(), CLIError> {
                         .parse::<u32>()
                         .expect("Light ID must be a number");
                     println!("Turning light {} off...", light_id);
-                    let light_state = LightState {
-                        on: Some(false),
-                        ..Default::default()
-                    };
+                    let light_state = LightState::default().with_on(false);
                     hue_api::async_set_light_state(
                         &c.bridge_ip,
                         &c.username,
@@ -205,10 +199,7 @@ async fn main() -> Result<(), CLIError> {
 
                     if let Some(light) = lights.0.get(&light_id) {
                         let new_state = !light.state.on.unwrap_or(false);
-                        let light_state = LightState {
-                            on: Some(new_state),
-                            ..Default::default()
-                        };
+                        let light_state = LightState::default().with_on(new_state);
                         let response = hue_api::async_set_light_state(
                             &c.bridge_ip,
                             &c.username,
@@ -218,7 +209,7 @@ async fn main() -> Result<(), CLIError> {
                         )
                         .await
                         .map_err(CLIError::HueLightCoreError)?;
-
+                        
                         let success_str = format!("/lights/{}/state/on", light_id);
                         let result_of_toggle = response.iter().find_map(|entry| match entry {
                             HueResponseEntry::Success { success }
@@ -256,10 +247,7 @@ async fn main() -> Result<(), CLIError> {
                         .parse::<u16>()
                         .expect("Brightness must be a number");
 
-                    let l_state = LightState {
-                        brightness: Some(brightness),
-                        ..Default::default()
-                    };
+                    let l_state = LightState::default().with_brightness(brightness);
 
                     hue_api::async_set_light_state(
                         &c.bridge_ip,
