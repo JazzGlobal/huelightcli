@@ -1,17 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+use crate::models::hueerror::ErrorDetail;
+
 // Create User related models
 #[derive(Debug, Deserialize)]
 pub struct SuccessDetail {
     pub username: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(rename = "type")]
-    pub _type: i32,
-    pub address: String,
-    pub description: String,
 }
 
 #[derive(Debug, Deserialize)]
