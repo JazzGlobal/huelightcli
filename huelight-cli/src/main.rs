@@ -230,11 +230,11 @@ async fn main() -> Result<(), CLIError> {
                         });
 
                         let message = if result_of_toggle.is_none() {
-                            "Failed to toggle the input light!"
+                            format!("Failed to toggle light {}!", light_id)
                         } else {
-                            "Successfully toggled the light!"
+                            format!("Successfully toggled the light {}!", light_id)
                         };
-                        logger.log(message);
+                        logger.log(&message);
                     } else {
                         return Err(CLIError::HueLightCoreError(CoreError::Bridge(
                             HueBridgeError::LightNotFound,
