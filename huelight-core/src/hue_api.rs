@@ -301,8 +301,7 @@ mod tests {
     async fn async_set_light_state_valid_response_returns_model() {
         // Arrange
         let mock_hue_client = MockHueClient::new().with_put_json(|_url, _body| {
-            let serialized_response = "[ { \"error\": { \"type\": 7, \"address\": \"/lights/2/state/bri\", \"description\": \"invalid value, null,, for parameter, bri\" } }, { \"success\": { \"/lights/2/state/on\": false } }]";
-            Ok(serialized_response.to_string())
+            let serialized_response = r#"[ { "error": { "type": 7, "address": "/lights/2/state/bri", "description": "invalid value, null,, for parameter, bri" } }, { "success": { "/lights/2/state/on": false } }]"#;            Ok(serialized_response.to_string())
         });
 
         let state = LightState::default();
