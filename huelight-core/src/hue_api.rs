@@ -247,7 +247,6 @@ mod tests {
         let mut logger = Logger::default();
 
         // Act
-        // The username doesn't matter because the FakeClient doesn't use it.
         let result = async_get_all_lights("127.0.0.1", "", &mock_hue_client, &mut logger).await;
 
         // Assert
