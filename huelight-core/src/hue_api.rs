@@ -114,7 +114,7 @@ mod tests {
     use crate::hue_api::async_set_light_state;
     use crate::logger::{ILogger, Logger};
     use crate::models::hueerror::HueResponseEntry;
-    use crate::models::light::LightState;
+    use crate::models::light::{Light, LightState};
     use async_trait::async_trait;
 
     struct MockHueClient {
@@ -253,7 +253,7 @@ mod tests {
         // Assert
 
         let parsed_result = result.unwrap();
-        let expected_light1 = crate::models::light::Light {
+        let expected_light1 = Light {
             name: "Living Room Light".to_string(),
             _type: "Extended color light".to_string(),
             state: LightState {
@@ -263,7 +263,7 @@ mod tests {
                 saturation: Some(150),
             },
         };
-        let expected_light2 = crate::models::light::Light {
+        let expected_light2 = Light {
             name: "Bedroom Light".to_string(),
             _type: "Dimmable light".to_string(),
             state: LightState {
