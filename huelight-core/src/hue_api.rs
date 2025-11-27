@@ -117,10 +117,14 @@ mod tests {
     use crate::models::light::{Light, LightState};
     use async_trait::async_trait;
 
+    pub type GetFn = Box<dyn Fn(&str) -> CoreResult<String> + Send + Sync>;
+    pub type PostJsonFn = Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>;
+    pub type PutJsonFn = Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>;
+
     struct MockHueClient {
-        pub post_json_fn: Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>,
-        pub get_fn: Box<dyn Fn(&str) -> CoreResult<String> + Send + Sync>,
-        pub put_json_fn: Box<dyn Fn(&str, &str) -> CoreResult<String> + Send + Sync>,
+        pub post_json_fn: PostJsonFn,
+        pub get_fn: GetFn,
+        pub put_json_fn: PutJsonFn
     }
 
     impl MockHueClient {
