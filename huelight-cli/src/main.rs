@@ -83,6 +83,20 @@ async fn main() -> Result<(), CLIError> {
                         .help("Value between 0-255 to set light brightness to")
                     )
                 )
+                .subcommand(
+                    clap::Command::new("hue")
+                    .about("Sets the hue for a light")
+                    .arg(
+                        clap::Arg::new("light_id")
+                            .required(true)
+                            .help("ID of the light to set brightness")
+                    )
+                    .arg(
+                        clap::Arg::new("hue")
+                        .required(true)
+                        .help("Value between 0-65535 to set the light hue to. This is a wrapping value. Both 0 and 65535 are red. 25500 is green and 46920 is blue.")
+                    )
+                )
         )
         .get_matches();
 
@@ -248,6 +262,33 @@ async fn main() -> Result<(), CLIError> {
                         .expect("Brightness must be a number");
 
                     let l_state = LightState::default().with_brightness(brightness);
+
+                    hue_api::async_set_light_state(
+                        &c.bridge_ip,
+                        &c.username,
+                        light_id,
+                        &l_state,
+                        &client,
+                    )
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+
+                    Ok(())
+                }
+                Some(("hue", light_cmd)) => {
+                    let light_id = light_cmd
+                        .get_one::<String>("light_id")
+                        .expect("Light ID is required")
+                        .parse::<u32>()
+                        .expect("Light ID must be a number");
+                    let hue = light_cmd
+                        .get_one::<String>("hue")
+                        .expect("Hue is required")
+                        .parse::<u16>()
+                        .expect("Hue must be a number");
+                    
+                    println!("Changing light hue {}...", light_id);
+                    let l_state = LightState::default().with_hue(hue);
 
                     hue_api::async_set_light_state(
                         &c.bridge_ip,
