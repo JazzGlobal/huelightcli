@@ -8,4 +8,10 @@ pub enum CLIError {
 
     #[error("config file failed to load")]
     ConfigNotLoaded,
+
+    #[error("arg not provided")]
+    ArgNotProvided,
+
+    #[error("int arg unable to be parsed")]
+    InvalidIntArgParse(#[from] std::num::ParseIntError),
 }
