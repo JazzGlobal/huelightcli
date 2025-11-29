@@ -79,8 +79,35 @@ async fn main() -> Result<(), CLIError> {
                     .arg(
                         clap::Arg::new("brightness")
                         .required(true)
-                        .short('b')
-                        .help("Value between 0-255 to set light brightness to")
+                        .help("Value between 0-255 to set light brightness to. Brightness is a scale from 1 (the minimum the light is capable of) to 254 (the maximum). A brightness of 1 is not off.")
+                    )
+                )
+                .subcommand(
+                    clap::Command::new("hue")
+                    .about("Sets the hue for a light")
+                    .arg(
+                        clap::Arg::new("light_id")
+                            .required(true)
+                            .help("ID of the light to set hue")
+                    )
+                    .arg(
+                        clap::Arg::new("hue")
+                        .required(true)
+                        .help("Value between 0-65535 to set the light hue to. This is a wrapping value. Both 0 and 65535 are red. 25500 is green and 46920 is blue.")
+                    )
+                )
+                .subcommand(
+                    clap::Command::new("saturation")
+                    .about("Sets the saturation for a light")
+                    .arg(
+                        clap::Arg::new("light_id")
+                            .required(true)
+                            .help("ID of the light to set saturation")
+                    )
+                    .arg(
+                        clap::Arg::new("saturation")
+                        .required(true)
+                        .help("Value between 0-255 to set the light saturation to. 254 is the most saturated (colored) and 0 is the least saturated (white).")
                     )
                 )
         )
@@ -244,10 +271,64 @@ async fn main() -> Result<(), CLIError> {
                     let brightness = light_cmd
                         .get_one::<String>("brightness")
                         .expect("Brightness is required")
-                        .parse::<u16>()
+                        .parse::<u8>()
                         .expect("Brightness must be a number");
 
                     let l_state = LightState::default().with_brightness(brightness);
+
+                    hue_api::async_set_light_state(
+                        &c.bridge_ip,
+                        &c.username,
+                        light_id,
+                        &l_state,
+                        &client,
+                    )
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+
+                    Ok(())
+                }
+                Some(("hue", light_cmd)) => {
+                    let light_id = light_cmd
+                        .get_one::<String>("light_id")
+                        .expect("Light ID is required")
+                        .parse::<u32>()
+                        .expect("Light ID must be a number");
+                    let hue = light_cmd
+                        .get_one::<String>("hue")
+                        .expect("Hue is required")
+                        .parse::<u16>()
+                        .expect("Hue must be a number");
+
+                    println!("Changing light hue {}...", light_id);
+                    let l_state = LightState::default().with_hue(hue);
+
+                    hue_api::async_set_light_state(
+                        &c.bridge_ip,
+                        &c.username,
+                        light_id,
+                        &l_state,
+                        &client,
+                    )
+                    .await
+                    .map_err(CLIError::HueLightCoreError)?;
+
+                    Ok(())
+                }
+                Some(("saturation", light_cmd)) => {
+                    let light_id = light_cmd
+                        .get_one::<String>("light_id")
+                        .expect("Light ID is required")
+                        .parse::<u32>()
+                        .expect("Light ID must be a number");
+                    let saturation = light_cmd
+                        .get_one::<String>("saturation")
+                        .expect("Saturation is required")
+                        .parse::<u8>()
+                        .expect("Saturation must be a number");
+
+                    println!("Changing light saturation {}...", light_id);
+                    let l_state = LightState::default().with_saturation(saturation);
 
                     hue_api::async_set_light_state(
                         &c.bridge_ip,

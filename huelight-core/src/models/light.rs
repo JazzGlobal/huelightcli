@@ -20,7 +20,7 @@ pub struct LightState {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub on: Option<bool>,
     #[serde(rename = "bri", skip_serializing_if = "Option::is_none")]
-    pub brightness: Option<u16>,
+    pub brightness: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hue: Option<u16>,
     #[serde(rename = "sat", skip_serializing_if = "Option::is_none")]
@@ -33,7 +33,7 @@ impl LightState {
         self
     }
 
-    pub fn with_brightness(mut self, brightness: u16) -> Self {
+    pub fn with_brightness(mut self, brightness: u8) -> Self {
         self.brightness = Some(brightness);
         self
     }
