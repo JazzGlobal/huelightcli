@@ -102,7 +102,7 @@ async fn main() -> Result<(), CLIError> {
                     .arg(
                         clap::Arg::new("light_id")
                             .required(true)
-                            .help("ID of the light to set satuation")
+                            .help("ID of the light to set saturation")
                     )
                     .arg(
                         clap::Arg::new("saturation")
