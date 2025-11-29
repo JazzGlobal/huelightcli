@@ -88,7 +88,7 @@ async fn main() -> Result<(), CLIError> {
                     .arg(
                         clap::Arg::new("light_id")
                             .required(true)
-                            .help("ID of the light to set brightness")
+                            .help("ID of the light to set hue")
                     )
                     .arg(
                         clap::Arg::new("hue")
@@ -102,7 +102,7 @@ async fn main() -> Result<(), CLIError> {
                     .arg(
                         clap::Arg::new("light_id")
                             .required(true)
-                            .help("ID of the light to set brightness")
+                            .help("ID of the light to set satuation")
                     )
                     .arg(
                         clap::Arg::new("saturation")
@@ -300,7 +300,7 @@ async fn main() -> Result<(), CLIError> {
                         .parse::<u16>()
                         .expect("Hue must be a number");
 
-                    println!("Changing light saturation {}...", light_id);
+                    println!("Changing light hue {}...", light_id);
                     let l_state = LightState::default().with_hue(hue);
 
                     hue_api::async_set_light_state(
