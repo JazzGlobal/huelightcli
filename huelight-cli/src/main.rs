@@ -116,7 +116,7 @@ async fn main() -> Result<(), CLIError> {
                     .arg(
                         clap::Arg::new("light_id")
                             .required(true)
-                            .help("ID of the light to set saturation")
+                            .help("ID of the light to modify")
                     )
                     .arg(
                         clap::Arg::new("saturation")
@@ -412,9 +412,8 @@ async fn main() -> Result<(), CLIError> {
                     let msg: String = if !action_msg.is_empty() {
                         let mut s = "Attempting to change the following: \n".to_string();
                         action_msg.iter().for_each(|e| {
-                            let mut t_entry = e.to_string();
-                            t_entry.push('\n');
-                            s.push_str(t_entry.as_str());
+                            s.push_str(e);
+                            s.push('\n');
                         });
                         s
                     } else {
@@ -423,7 +422,7 @@ async fn main() -> Result<(), CLIError> {
 
                     println!("{}", msg);
 
-                    // Only hit the API if the user entered at least one valid state valud.
+                    // Only hit the API if the user entered at least one valid state value.
                     if !action_msg.is_empty() {
                         hue_api::async_set_light_state(
                             &c.bridge_ip,
