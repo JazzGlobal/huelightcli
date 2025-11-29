@@ -79,8 +79,7 @@ async fn main() -> Result<(), CLIError> {
                     .arg(
                         clap::Arg::new("brightness")
                         .required(true)
-                        .short('b')
-                        .help("Value between 0-255 to set light brightness to")
+                        .help("Value between 0-255 to set light brightness to. Brightness is a scale from 1 (the minimum the light is capable of) to 254 (the maximum). A brightness of 1 is not off.")
                     )
                 )
                 .subcommand(
@@ -272,7 +271,7 @@ async fn main() -> Result<(), CLIError> {
                     let brightness = light_cmd
                         .get_one::<String>("brightness")
                         .expect("Brightness is required")
-                        .parse::<u16>()
+                        .parse::<u8>()
                         .expect("Brightness must be a number");
 
                     let l_state = LightState::default().with_brightness(brightness);
