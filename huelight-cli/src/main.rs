@@ -110,6 +110,33 @@ async fn main() -> Result<(), CLIError> {
                         .help("Value between 0-255 to set the light saturation to. 254 is the most saturated (colored) and 0 is the least saturated (white).")
                     )
                 )
+                .subcommand(
+                    clap::Command::new("set")
+                    .about("Sets various properties of the specified light")
+                    .arg(
+                        clap::Arg::new("light_id")
+                            .required(true)
+                            .help("ID of the light to set saturation")
+                    )
+                    .arg(
+                        clap::Arg::new("saturation")
+                        .required(false)
+                        .short('s')
+                        .help("Value between 0-255 to set the light saturation to. 254 is the most saturated (colored) and 0 is the least saturated (white).")
+                    )
+                    .arg(
+                        clap::Arg::new("hue")
+                        .required(false)
+                        .short('u')
+                        .help("Value between 0-65535 to set the light hue to. This is a wrapping value. Both 0 and 65535 are red. 25500 is green and 46920 is blue.")
+                    )
+                    .arg(
+                        clap::Arg::new("brightness")
+                        .required(false)
+                        .short('b')
+                        .help("Value between 0-255 to set light brightness to. Brightness is a scale from 1 (the minimum the light is capable of) to 254 (the maximum). A brightness of 1 is not off.")
+                    )
+                )
         )
         .get_matches();
 
@@ -339,6 +366,75 @@ async fn main() -> Result<(), CLIError> {
                     )
                     .await
                     .map_err(CLIError::HueLightCoreError)?;
+
+                    Ok(())
+                }
+                Some(("set", light_cmd)) => {
+                    let light_id = light_cmd
+                        .get_one::<String>("light_id")
+                        .expect("Light ID is required")
+                        .parse::<u32>()
+                        .expect("Light ID must be a number");
+
+                    let mut l_state = LightState::default();
+                    let mut action_msg: Vec<&str> = vec![];
+
+                    let saturation = light_cmd
+                        .get_one::<String>("saturation")
+                        .map(|s| s.parse::<u8>().map_err(CLIError::InvalidIntArgParse))
+                        .unwrap_or_else(|| Err(CLIError::ArgNotProvided));
+
+                    if let Ok(sat_value) = saturation {
+                        l_state = l_state.with_saturation(sat_value);
+                        action_msg.push("Saturation");
+                    }
+
+                    let brightness = light_cmd
+                        .get_one::<String>("brightness")
+                        .map(|b| b.parse::<u8>().map_err(CLIError::InvalidIntArgParse))
+                        .unwrap_or_else(|| Err(CLIError::ArgNotProvided));
+
+                    if let Ok(bri_value) = brightness {
+                        l_state = l_state.with_brightness(bri_value);
+                        action_msg.push("Brightness");
+                    }
+
+                    let hue = light_cmd
+                        .get_one::<String>("hue")
+                        .map(|h| h.parse::<u16>().map_err(CLIError::InvalidIntArgParse))
+                        .unwrap_or_else(|| Err(CLIError::ArgNotProvided));
+
+                    if let Ok(hue_value) = hue {
+                        l_state = l_state.with_hue(hue_value);
+                        action_msg.push("Hue");
+                    }
+
+                    let msg: String = if !action_msg.is_empty() {
+                        let mut s = "Attempting to change the following: \n".to_string();
+                        action_msg.iter().for_each(|e| {
+                            let mut t_entry = e.to_string();
+                            t_entry.push('\n');
+                            s.push_str(t_entry.as_str());
+                        });
+                        s
+                    } else {
+                        "No arguments provided that would change the light!".to_string()
+                    };
+
+                    println!("{}", msg);
+
+                    // Only hit the API if the user entered at least one valid state valud.
+                    if !action_msg.is_empty() {
+                        hue_api::async_set_light_state(
+                            &c.bridge_ip,
+                            &c.username,
+                            light_id,
+                            &l_state,
+                            &client,
+                        )
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
+                    }
 
                     Ok(())
                 }
