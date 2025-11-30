@@ -60,7 +60,7 @@ impl Config {
 
     pub async fn save(
         &self,
-        logger: &mut impl ILogger,
+        logger: &dyn ILogger,
         file_handler: &impl FileHandler,
     ) -> Result<(), CoreError> {
         let config_dir = dirs::config_dir()

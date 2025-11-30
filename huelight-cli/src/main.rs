@@ -1,8 +1,12 @@
+use std::sync::Arc;
+
 use clap::ArgMatches;
 use hue::logger::{ILogger, Logger};
 use hue::models::light::LightState;
 use huelight_core::client::ReqwestHueClient;
+use huelight_core::config::Config;
 use huelight_core::error::{CoreError, HueBridgeError};
+use huelight_core::hue_api::{HueApi, HueApiV1};
 use huelight_core::models::hueerror::HueResponseEntry;
 use huelight_core::{self as hue, hue_api};
 
@@ -150,10 +154,10 @@ async fn main() -> Result<(), CLIError> {
         )
         .get_matches();
 
-    let mut logger = Logger::default();
-
     let r_client = reqwest::Client::new();
-    let client = ReqwestHueClient::new(r_client);
+    let client = Arc::new(ReqwestHueClient::new(r_client));
+    let logger = Arc::new(Logger::default());
+    let api = HueApiV1::new(client, logger.clone());
 
     let config: Result<hue::config::Config, CLIError> = match cli.subcommand_name() {
         Some(name) if name != "setup" => {
@@ -171,7 +175,7 @@ async fn main() -> Result<(), CLIError> {
     }
 
     // if we get here, we have a valid config or are running setup
-    let c = config.unwrap_or(hue::config::Config {
+    let c = config.unwrap_or(Config {
         bridge_ip: String::new(),
         username: String::new(),
     });
@@ -182,14 +186,10 @@ async fn main() -> Result<(), CLIError> {
                 Some(("list", _)) => {
                     // Get the list of lights
                     println!("Getting list of lights...");
-                    let lights = hue_api::async_get_all_lights(
-                        &c.bridge_ip,
-                        &c.username,
-                        &client,
-                        &mut logger,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    let lights = api
+                        .async_get_all_lights(&c.bridge_ip, &c.username)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
 
                     for (id, light) in lights.0 {
                         logger.log(&format!(
@@ -210,56 +210,40 @@ async fn main() -> Result<(), CLIError> {
                     let light_id = parse_light_id(light_cmd);
                     println!("Turning light on for Light ID: {}", light_id);
                     let light_state = LightState::default().with_on(true);
-                    hue_api::async_set_light_state(
-                        &c.bridge_ip,
-                        &c.username,
-                        light_id,
-                        &light_state,
-                        &client,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    api.async_set_light_state(&c.bridge_ip, &c.username, light_id, &light_state)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
                     Ok(())
                 }
                 Some(("off", light_cmd)) => {
                     let light_id = parse_light_id(light_cmd);
                     println!("Turning light off for Light ID: {}", light_id);
                     let light_state = LightState::default().with_on(false);
-                    hue_api::async_set_light_state(
-                        &c.bridge_ip,
-                        &c.username,
-                        light_id,
-                        &light_state,
-                        &client,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    api.async_set_light_state(&c.bridge_ip, &c.username, light_id, &light_state)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
                     Ok(())
                 }
                 Some(("toggle", light_cmd)) => {
                     let light_id = parse_light_id(light_cmd);
                     println!("Toggling light for Light ID: {}", light_id);
-                    let lights = hue_api::async_get_all_lights(
-                        &c.bridge_ip,
-                        &c.username,
-                        &client,
-                        &mut logger,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    let lights = api
+                        .async_get_all_lights(&c.bridge_ip, &c.username)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
 
                     if let Some(light) = lights.0.get(&light_id) {
                         let new_state = !light.state.on.unwrap_or(false);
                         let light_state = LightState::default().with_on(new_state);
-                        let response = hue_api::async_set_light_state(
-                            &c.bridge_ip,
-                            &c.username,
-                            light_id,
-                            &light_state,
-                            &client,
-                        )
-                        .await
-                        .map_err(CLIError::HueLightCoreError)?;
+                        let response = api
+                            .async_set_light_state(
+                                &c.bridge_ip,
+                                &c.username,
+                                light_id,
+                                &light_state,
+                            )
+                            .await
+                            .map_err(CLIError::HueLightCoreError)?;
 
                         let success_str = format!("/lights/{}/state/on", light_id);
                         let result_of_toggle = response.iter().find_map(|entry| match entry {
@@ -299,15 +283,9 @@ async fn main() -> Result<(), CLIError> {
                     );
                     let l_state = LightState::default().with_brightness(brightness);
 
-                    hue_api::async_set_light_state(
-                        &c.bridge_ip,
-                        &c.username,
-                        light_id,
-                        &l_state,
-                        &client,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    api.async_set_light_state(&c.bridge_ip, &c.username, light_id, &l_state)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
 
                     Ok(())
                 }
@@ -322,15 +300,9 @@ async fn main() -> Result<(), CLIError> {
                     println!("Changing light hue to {} for Light ID: {}", hue, light_id);
                     let l_state = LightState::default().with_hue(hue);
 
-                    hue_api::async_set_light_state(
-                        &c.bridge_ip,
-                        &c.username,
-                        light_id,
-                        &l_state,
-                        &client,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    api.async_set_light_state(&c.bridge_ip, &c.username, light_id, &l_state)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
 
                     Ok(())
                 }
@@ -348,15 +320,9 @@ async fn main() -> Result<(), CLIError> {
                     );
                     let l_state = LightState::default().with_saturation(saturation);
 
-                    hue_api::async_set_light_state(
-                        &c.bridge_ip,
-                        &c.username,
-                        light_id,
-                        &l_state,
-                        &client,
-                    )
-                    .await
-                    .map_err(CLIError::HueLightCoreError)?;
+                    api.async_set_light_state(&c.bridge_ip, &c.username, light_id, &l_state)
+                        .await
+                        .map_err(CLIError::HueLightCoreError)?;
 
                     Ok(())
                 }
@@ -410,15 +376,9 @@ async fn main() -> Result<(), CLIError> {
 
                     // Only hit the API if the user entered at least one valid state value.
                     if !action_msg.is_empty() {
-                        hue_api::async_set_light_state(
-                            &c.bridge_ip,
-                            &c.username,
-                            light_id,
-                            &l_state,
-                            &client,
-                        )
-                        .await
-                        .map_err(CLIError::HueLightCoreError)?;
+                        api.async_set_light_state(&c.bridge_ip, &c.username, light_id, &l_state)
+                            .await
+                            .map_err(CLIError::HueLightCoreError)?;
                     }
 
                     Ok(())
@@ -445,7 +405,7 @@ async fn main() -> Result<(), CLIError> {
                     ));
 
                     huelight_core::config::Config::new(ip_address, username)
-                        .save(&mut logger, &hue::config::TokioFileHandler)
+                        .save(logger.as_ref(), &hue::config::TokioFileHandler)
                         .await
                         .map_err(CLIError::HueLightCoreError)?;
                     Ok(())
