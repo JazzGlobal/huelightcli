@@ -8,7 +8,7 @@ use huelight_core::config::Config;
 use huelight_core::error::{CoreError, HueBridgeError};
 use huelight_core::hue_api::{HueApi, HueApiV1};
 use huelight_core::models::hueerror::HueResponseEntry;
-use huelight_core::{self as hue, hue_api};
+use huelight_core::{self as hue};
 
 pub mod error;
 use error::CLIError;
