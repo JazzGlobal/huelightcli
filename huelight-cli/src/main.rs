@@ -1,3 +1,4 @@
+use clap::ArgMatches;
 use hue::logger::{ILogger, Logger};
 use hue::models::light::LightState;
 use huelight_core::client::ReqwestHueClient;
@@ -197,12 +198,8 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("on", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
-                    println!("Turning light {} on...", light_id);
+                    let light_id = parse_light_id(&light_cmd);
+                    println!("Turning light on for Light ID: {}", light_id);
                     let light_state = LightState::default().with_on(true);
                     hue_api::async_set_light_state(
                         &c.bridge_ip,
@@ -216,12 +213,8 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("off", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
-                    println!("Turning light {} off...", light_id);
+                    let light_id = parse_light_id(&light_cmd);
+                    println!("Turning light off for Light ID: {}", light_id);
                     let light_state = LightState::default().with_on(false);
                     hue_api::async_set_light_state(
                         &c.bridge_ip,
@@ -235,13 +228,8 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("toggle", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
-                    println!("Toggling light {}...", light_id);
-                    // Implement logic to toggle light here
+                    let light_id = parse_light_id(&light_cmd);
+                    println!("Toggling light on for Light ID: {}", light_id);
                     let lights = hue_api::async_get_all_lights(
                         &c.bridge_ip,
                         &c.username,
@@ -289,18 +277,17 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("brightness", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
-                    println!("Changing light brightness {}...", light_id);
+                    let light_id = parse_light_id(&light_cmd);
                     let brightness = light_cmd
                         .get_one::<String>("brightness")
                         .expect("Brightness is required")
                         .parse::<u8>()
-                        .expect("Brightness must be a number");
+                        .expect("Brightness must be a number within the range: 0-255");
 
+                    println!(
+                        "Changing light brightness to {} for Light ID: {}",
+                        brightness, light_id
+                    );
                     let l_state = LightState::default().with_brightness(brightness);
 
                     hue_api::async_set_light_state(
@@ -316,18 +303,14 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("hue", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
+                    let light_id = parse_light_id(&light_cmd);
                     let hue = light_cmd
                         .get_one::<String>("hue")
                         .expect("Hue is required")
                         .parse::<u16>()
-                        .expect("Hue must be a number");
+                        .expect("Hue must be a number within the range: 0-65535");
 
-                    println!("Changing light hue {}...", light_id);
+                    println!("Changing light hue to {} for Light ID: {}", hue, light_id);
                     let l_state = LightState::default().with_hue(hue);
 
                     hue_api::async_set_light_state(
@@ -343,18 +326,17 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("saturation", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
+                    let light_id = parse_light_id(light_cmd);
                     let saturation = light_cmd
                         .get_one::<String>("saturation")
                         .expect("Saturation is required")
                         .parse::<u8>()
-                        .expect("Saturation must be a number");
+                        .expect("Saturation must be a number within the range: 0-255");
 
-                    println!("Changing light saturation {}...", light_id);
+                    println!(
+                        "Changing light saturation to {} for Light ID: {}",
+                        saturation, light_id
+                    );
                     let l_state = LightState::default().with_saturation(saturation);
 
                     hue_api::async_set_light_state(
@@ -370,12 +352,7 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("set", light_cmd)) => {
-                    let light_id = light_cmd
-                        .get_one::<String>("light_id")
-                        .expect("Light ID is required")
-                        .parse::<u32>()
-                        .expect("Light ID must be a number");
-
+                    let light_id = parse_light_id(light_cmd);
                     let mut l_state = LightState::default();
                     let mut action_msg: Vec<&str> = vec![];
 
@@ -469,4 +446,13 @@ async fn main() -> Result<(), CLIError> {
         }
         _ => Err(CLIError::InvalidCommandError),
     };
+
+    /// Helper to parse the light ID, which is required for every command where it needs to be parsed.
+    fn parse_light_id(light_cmd: &ArgMatches) -> u32 {
+        light_cmd
+            .get_one::<String>("light_id")
+            .unwrap() // CLI should handle this because it is marked required.
+            .parse::<u32>()
+            .expect("Light ID must be a number")
+    }
 }
