@@ -18,12 +18,15 @@ impl ILogger for Logger {
          */
         self.entries
             .lock()
-            .unwrap()
+            .unwrap_or_else(|e| e.into_inner())
             .push(message.to_string() + "\n");
         println!("{}", message);
     }
 
     fn entries(&self) -> Vec<String> {
-        self.entries.lock().unwrap().clone()
+        self.entries
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 }
