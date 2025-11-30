@@ -79,9 +79,7 @@ impl HueApi for HueApiV1 {
             ip_address, username, light_id
         );
         let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
-        let headers = vec![
-            Header::new("Content-Type", "application/json")
-        ];
+        let headers = vec![Header::new("Content-Type", "application/json")];
         let res = self.client.put_json(&url, &json_state, headers).await?;
         let hue_response_list =
             serde_json::from_str::<HueResponse>(&res).map_err(CoreError::Serialization)?;
@@ -105,9 +103,7 @@ pub async fn async_create_user(
 
     // Use the injected client to send the POST request
     let url = format!("http://{}/api", ip_address);
-    let headers = vec![
-        Header::new("Content-Type", "application/json")
-    ];
+    let headers = vec![Header::new("Content-Type", "application/json")];
     let res = client.post_json(&url, &json_user, headers).await?;
 
     let parsed: CreateUserResponse = serde_json::from_str(&res).map_err(|err| {
@@ -213,7 +209,12 @@ mod tests {
 
     #[async_trait]
     impl HueClient for MockHueClient {
-        async fn post_json(&self, url: &str, body: &str, _headers: Vec<Header>) -> CoreResult<String> {
+        async fn post_json(
+            &self,
+            url: &str,
+            body: &str,
+            _headers: Vec<Header>,
+        ) -> CoreResult<String> {
             (self.post_json_fn)(url, body)
         }
 
@@ -221,7 +222,12 @@ mod tests {
             (self.get_fn)(url)
         }
 
-        async fn put_json(&self, url: &str, body: &str, _headers: Vec<Header>) -> CoreResult<String> {
+        async fn put_json(
+            &self,
+            url: &str,
+            body: &str,
+            _headers: Vec<Header>,
+        ) -> CoreResult<String> {
             (self.put_json_fn)(url, body)
         }
     }
