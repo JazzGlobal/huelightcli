@@ -280,7 +280,7 @@ async fn main() -> Result<(), CLIError> {
                     let light_id = parse_light_id(light_cmd);
                     let brightness = light_cmd
                         .get_one::<String>("brightness")
-                        .expect("Brightness is required")
+                        .unwrap() // required by cli
                         .parse::<u8>()
                         .expect("Brightness must be a number within the range: 0-255");
 
@@ -306,7 +306,7 @@ async fn main() -> Result<(), CLIError> {
                     let light_id = parse_light_id(light_cmd);
                     let hue = light_cmd
                         .get_one::<String>("hue")
-                        .expect("Hue is required")
+                        .unwrap() // required by cli
                         .parse::<u16>()
                         .expect("Hue must be a number within the range: 0-65535");
 
@@ -329,7 +329,7 @@ async fn main() -> Result<(), CLIError> {
                     let light_id = parse_light_id(light_cmd);
                     let saturation = light_cmd
                         .get_one::<String>("saturation")
-                        .expect("Saturation is required")
+                        .unwrap() // required by cli
                         .parse::<u8>()
                         .expect("Saturation must be a number within the range: 0-255");
 
