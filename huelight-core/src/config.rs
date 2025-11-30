@@ -135,7 +135,7 @@ mod tests {
     async fn save_config_write_success_expect_success_log() {
         // Arrange
         let config = Config::new("192.168.1.1".to_string(), "user".to_string());
-        let mut logger = Logger::default();
+        let logger = Logger::default();
 
         #[derive(Default)]
         struct MockFileHandler;
@@ -155,7 +155,7 @@ mod tests {
         }
 
         // Act
-        config.save(&mut logger, &MockFileHandler).await.unwrap();
+        config.save(&logger, &MockFileHandler).await.unwrap();
 
         // Assert
         assert!(
@@ -170,7 +170,7 @@ mod tests {
     async fn save_config_write_fail_expect_error_from_write_error() {
         // Arrange
         let config = Config::new("192.168.1.1".to_string(), "user".to_string());
-        let mut logger = Logger::default();
+        let logger = Logger::default();
         #[derive(Default)]
         struct MockFileHandler;
 
@@ -189,7 +189,7 @@ mod tests {
         }
 
         // Act
-        let result = config.save(&mut logger, &MockFileHandler).await;
+        let result = config.save(&logger, &MockFileHandler).await;
 
         // Assert
 
@@ -201,7 +201,7 @@ mod tests {
     async fn save_config_create_dir_failed_expect_config_dir_create_error() {
         // Arrange
         let config = Config::new("192.168.1.1".to_string(), "user".to_string());
-        let mut logger = Logger::default();
+        let logger = Logger::default();
 
         #[derive(Default)]
         struct MockFileHandler;
@@ -223,7 +223,7 @@ mod tests {
         }
 
         // Act
-        let result = config.save(&mut logger, &MockFileHandler).await;
+        let result = config.save(&logger, &MockFileHandler).await;
 
         // Assert
         assert!(matches!(
