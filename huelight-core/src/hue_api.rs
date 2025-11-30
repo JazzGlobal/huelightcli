@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use reqwest::header::{HeaderMap, HeaderValue};
 
 use crate::client::{Header, HueClient};
 use crate::error::{CoreError, CoreResult, HueBridgeError};
