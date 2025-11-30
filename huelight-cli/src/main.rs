@@ -9,6 +9,15 @@ use huelight_core::{self as hue, hue_api};
 pub mod error;
 use error::CLIError;
 
+/// Helper to parse the light ID, which is required for every command where it needs to be parsed.
+fn parse_light_id(light_cmd: &ArgMatches) -> u32 {
+    light_cmd
+        .get_one::<String>("light_id")
+        .unwrap() // CLI should handle this because it is marked required.
+        .parse::<u32>()
+        .expect("Light ID must be a number")
+}
+
 #[tokio::main]
 async fn main() -> Result<(), CLIError> {
     // CLI application that will interface with the Philips Hue API to control smart lights with CMD commands.
@@ -229,7 +238,7 @@ async fn main() -> Result<(), CLIError> {
                 }
                 Some(("toggle", light_cmd)) => {
                     let light_id = parse_light_id(light_cmd);
-                    println!("Toggling light on for Light ID: {}", light_id);
+                    println!("Toggling light for Light ID: {}", light_id);
                     let lights = hue_api::async_get_all_lights(
                         &c.bridge_ip,
                         &c.username,
@@ -446,13 +455,4 @@ async fn main() -> Result<(), CLIError> {
         }
         _ => Err(CLIError::InvalidCommandError),
     };
-
-    /// Helper to parse the light ID, which is required for every command where it needs to be parsed.
-    fn parse_light_id(light_cmd: &ArgMatches) -> u32 {
-        light_cmd
-            .get_one::<String>("light_id")
-            .unwrap() // CLI should handle this because it is marked required.
-            .parse::<u32>()
-            .expect("Light ID must be a number")
-    }
 }
