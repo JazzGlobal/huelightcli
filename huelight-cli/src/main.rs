@@ -198,7 +198,7 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("on", light_cmd)) => {
-                    let light_id = parse_light_id(&light_cmd);
+                    let light_id = parse_light_id(light_cmd);
                     println!("Turning light on for Light ID: {}", light_id);
                     let light_state = LightState::default().with_on(true);
                     hue_api::async_set_light_state(
@@ -213,7 +213,7 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("off", light_cmd)) => {
-                    let light_id = parse_light_id(&light_cmd);
+                    let light_id = parse_light_id(light_cmd);
                     println!("Turning light off for Light ID: {}", light_id);
                     let light_state = LightState::default().with_on(false);
                     hue_api::async_set_light_state(
@@ -228,7 +228,7 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("toggle", light_cmd)) => {
-                    let light_id = parse_light_id(&light_cmd);
+                    let light_id = parse_light_id(light_cmd);
                     println!("Toggling light on for Light ID: {}", light_id);
                     let lights = hue_api::async_get_all_lights(
                         &c.bridge_ip,
@@ -277,7 +277,7 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("brightness", light_cmd)) => {
-                    let light_id = parse_light_id(&light_cmd);
+                    let light_id = parse_light_id(light_cmd);
                     let brightness = light_cmd
                         .get_one::<String>("brightness")
                         .expect("Brightness is required")
@@ -303,7 +303,7 @@ async fn main() -> Result<(), CLIError> {
                     Ok(())
                 }
                 Some(("hue", light_cmd)) => {
-                    let light_id = parse_light_id(&light_cmd);
+                    let light_id = parse_light_id(light_cmd);
                     let hue = light_cmd
                         .get_one::<String>("hue")
                         .expect("Hue is required")
