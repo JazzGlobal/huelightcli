@@ -1,9 +1,90 @@
+use std::sync::Arc;
+
+use async_trait::async_trait;
+
 use crate::client::HueClient;
 use crate::error::{CoreError, CoreResult, HueBridgeError};
 use crate::logger::ILogger;
 use crate::models::createuser::{CreateUserEntry, CreateUserResponse, User};
 use crate::models::hueerror::HueResponse;
 use crate::models::light::{LightResponse, LightState};
+
+#[async_trait]
+pub trait HueApi {
+    async fn async_get_all_lights(
+        &self,
+        ip_address: &str,
+        username: &str,
+    ) -> CoreResult<LightResponse>;
+    async fn async_set_light_state(
+        &self,
+        ip_address: &str,
+        username: &str,
+        light_id: u32,
+        state: &LightState,
+    ) -> CoreResult<HueResponse>;
+}
+
+pub struct HueApiV1 {
+    client: Arc<dyn HueClient + Send + Sync>,
+    logger: Arc<dyn ILogger + Send + Sync>,
+}
+
+impl HueApiV1 {
+    pub fn new(
+        client: Arc<dyn HueClient + Send + Sync>,
+        logger: Arc<dyn ILogger + Send + Sync>,
+    ) -> Self {
+        Self { client, logger }
+    }
+}
+
+#[async_trait]
+impl HueApi for HueApiV1 {
+    async fn async_get_all_lights(
+        &self,
+        ip_address: &str,
+        username: &str,
+    ) -> CoreResult<LightResponse> {
+        /*
+         * Sends a get request to the input IP Address of the Hue Bridge to retrieve all lights connected to the bridge.
+         */
+
+        let url = format!("http://{}/api/{}/lights", ip_address, username);
+        let res = self.client.get(&url).await?;
+        let parsed = serde_json::from_str::<LightResponse>(&res).map_err(|err| {
+            self.logger.log(&format!(
+                "Failed to parse lights JSON: {err}. Raw (truncated): {}",
+                &res[..res.len().min(200)]
+            ));
+            CoreError::Serialization(err)
+        })?;
+
+        Ok(parsed)
+    }
+
+    async fn async_set_light_state(
+        &self,
+        ip_address: &str,
+        username: &str,
+        light_id: u32,
+        state: &LightState,
+    ) -> CoreResult<HueResponse> {
+        /*
+         * Sends a PUT request to change the state of a specific light.
+         */
+
+        let url = format!(
+            "http://{}/api/{}/lights/{}/state",
+            ip_address, username, light_id
+        );
+        let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
+        let res = self.client.put_json(&url, &json_state).await?;
+        let hue_response_list =
+            serde_json::from_str::<HueResponse>(&res).map_err(CoreError::Serialization)?;
+        Ok(hue_response_list)
+    }
+}
 
 pub async fn async_create_user(
     ip_address: &str,
@@ -61,57 +142,13 @@ pub async fn async_create_user(
     }
 }
 
-pub async fn async_get_all_lights(
-    ip_address: &str,
-    username: &str,
-    client: &impl HueClient,
-    logger: &mut impl ILogger,
-) -> CoreResult<LightResponse> {
-    /*
-     * Sends a get request to the input IP Address of the Hue Bridge to retrieve all lights connected to the bridge.
-     */
-
-    let url = format!("http://{}/api/{}/lights", ip_address, username);
-    let res = client.get(&url).await?;
-    let parsed = serde_json::from_str::<LightResponse>(&res).map_err(|err| {
-        logger.log(&format!(
-            "Failed to parse lights JSON: {err}. Raw (truncated): {}",
-            &res[..res.len().min(200)]
-        ));
-        CoreError::Serialization(err)
-    })?;
-
-    Ok(parsed)
-}
-
-pub async fn async_set_light_state(
-    ip_address: &str,
-    username: &str,
-    light_id: u32,
-    state: &LightState,
-    client: &impl HueClient,
-) -> CoreResult<HueResponse> {
-    /*
-     * Sends a PUT request to change the state of a specific light.
-     */
-
-    let url = format!(
-        "http://{}/api/{}/lights/{}/state",
-        ip_address, username, light_id
-    );
-    let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
-    let res = client.put_json(&url, &json_state).await?;
-    let hue_response_list =
-        serde_json::from_str::<HueResponse>(&res).map_err(CoreError::Serialization)?;
-    Ok(hue_response_list)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{async_create_user, async_get_all_lights};
+    use std::sync::Arc;
+
+    use super::{HueApi, HueApiV1, async_create_user};
     use crate::client::HueClient;
     use crate::error::{CoreError, CoreResult, HueBridgeError};
-    use crate::hue_api::async_set_light_state;
     use crate::logger::{ILogger, Logger};
     use crate::models::hueerror::HueResponseEntry;
     use crate::models::light::{Light, LightState};
@@ -228,7 +265,7 @@ mod tests {
     #[tokio::test]
     async fn async_get_all_lights_logs_light_information() {
         // Arrange
-        let mock_hue_client = MockHueClient::new().with_get(|_url| {
+        let mock_hue_client = Arc::new(MockHueClient::new().with_get(|_url| {
             let fake_response = r#"{
                     "1": {
                         "state": {
@@ -252,12 +289,14 @@ mod tests {
                     }
                 }"#;
             Ok(fake_response.to_string())
-        });
+        }));
 
-        let mut logger = Logger::default();
+        let logger: Arc<Logger> = Arc::new(Logger::default());
+
+        let api = HueApiV1::new(mock_hue_client, logger);
 
         // Act
-        let result = async_get_all_lights("127.0.0.1", "", &mock_hue_client, &mut logger).await;
+        let result = api.async_get_all_lights("123.12.123", "").await;
 
         // Assert
         let parsed_result = result.unwrap();
@@ -291,14 +330,20 @@ mod tests {
     #[tokio::test]
     async fn async_set_light_state_invalid_response_returns_serialization_error() {
         // Arrange
-        let mock_hue_client = MockHueClient::new()
-            .with_put_json(|_url, _body| Ok("this cannot be serialized".to_string()));
+        let mock_hue_client = Arc::new(
+            MockHueClient::new()
+                .with_put_json(|_url, _body| Ok("this cannot be serialized".to_string())),
+        );
+        let logger: Arc<Logger> = Arc::new(Logger::default());
 
         let state = LightState::default();
 
+        let api = HueApiV1::new(mock_hue_client, logger);
+
         // Act
-        let result =
-            async_set_light_state("ipaddress", "username", 1, &state, &mock_hue_client).await;
+        let result = api
+            .async_set_light_state("ipaddress", "username", 1, &state)
+            .await;
 
         // Assert
         assert!(matches!(result, Err(CoreError::Serialization(_))));
@@ -307,15 +352,18 @@ mod tests {
     #[tokio::test]
     async fn async_set_light_state_valid_response_returns_model() {
         // Arrange
-        let mock_hue_client = MockHueClient::new().with_put_json(|_url, _body| {
+        let mock_hue_client = Arc::new(MockHueClient::new().with_put_json(|_url, _body| {
             let serialized_response = r#"[ { "error": { "type": 7, "address": "/lights/2/state/bri", "description": "invalid value, null,, for parameter, bri" } }, { "success": { "/lights/2/state/on": false } }]"#;            
             Ok(serialized_response.to_string())
-        });
-
+        }));
+        let logger: Arc<Logger> = Arc::new(Logger::default());
         let state = LightState::default();
 
+        let api = HueApiV1::new(mock_hue_client, logger);
+
         // Act
-        let result = async_set_light_state("ipaddress", "username", 1, &state, &mock_hue_client)
+        let result = api
+            .async_set_light_state("ipaddress", "username", 1, &state)
             .await
             .unwrap();
 
