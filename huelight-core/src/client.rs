@@ -37,15 +37,17 @@ impl ReqwestHueClient {
         Self { client }
     }
 
-    pub fn header_to_header_map(headers: &Vec<Header>) -> HeaderMap {
+    fn header_to_header_map(headers: &[Header]) -> CoreResult<HeaderMap> {
         let mut map = HeaderMap::new();
         for h in headers {
-            let name = HeaderName::from_bytes(h.name.as_bytes()).expect("invalid header name");
-            let value = HeaderValue::from_str(&h.value).expect("invalid header value");
+            let name = HeaderName::from_bytes(h.name.as_bytes())
+            .map_err(CoreError::InvalidReqwestHeaderName)?;
+            let value = HeaderValue::from_str(&h.value)
+            .map_err(CoreError::InvalidReqwestHeaderValue)?;
             map.append(name, value);
         }
 
-        map
+        Ok(map)
     }
 }
 
@@ -54,10 +56,11 @@ impl HueClient for ReqwestHueClient {
     async fn post_json(&self, url: &str, body: &str, headers: Vec<Header>) -> CoreResult<String> {
         // Implementation for sending a POST request with JSON body
 
+        let headers = ReqwestHueClient::header_to_header_map(&headers)?;
         let res = self
             .client
             .post(url)
-            .headers(ReqwestHueClient::header_to_header_map(&headers))
+            .headers(headers)
             .body(body.to_string())
             .send()
             .await
@@ -67,10 +70,11 @@ impl HueClient for ReqwestHueClient {
     }
 
     async fn get(&self, url: &str, headers: Vec<Header>) -> CoreResult<String> {
+        let headers = ReqwestHueClient::header_to_header_map(&headers)?;
         let res = self
             .client
             .get(url)
-            .headers(ReqwestHueClient::header_to_header_map(&headers))
+            .headers(headers)
             .send()
             .await
             .map_err(CoreError::Network)?;
@@ -79,10 +83,11 @@ impl HueClient for ReqwestHueClient {
     }
 
     async fn put_json(&self, url: &str, body: &str, headers: Vec<Header>) -> CoreResult<String> {
+        let headers = ReqwestHueClient::header_to_header_map(&headers)?;
         let res = self
             .client
             .put(url)
-            .headers(ReqwestHueClient::header_to_header_map(&headers))
+            .headers(headers)
             .body(body.to_string())
             .send()
             .await
