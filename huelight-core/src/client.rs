@@ -2,9 +2,10 @@ use crate::error::{CoreError, CoreResult};
 use async_trait::async_trait;
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
+/// Used as a shared structure to provide headers to various implementations of HueClient.
 pub struct Header {
-    pub name: String,
-    pub value: String,
+    name: String,
+    value: String,
 }
 
 impl Header {
@@ -56,11 +57,11 @@ impl HueClient for ReqwestHueClient {
     async fn post_json(&self, url: &str, body: &str, headers: &[Header]) -> CoreResult<String> {
         // Implementation for sending a POST request with JSON body
 
-        let headers = ReqwestHueClient::header_to_header_map(headers)?;
+        let h_map = ReqwestHueClient::header_to_header_map(headers)?;
         let res = self
             .client
             .post(url)
-            .headers(headers)
+            .headers(h_map)
             .body(body.to_string())
             .send()
             .await
@@ -70,11 +71,11 @@ impl HueClient for ReqwestHueClient {
     }
 
     async fn get(&self, url: &str, headers: &[Header]) -> CoreResult<String> {
-        let headers = ReqwestHueClient::header_to_header_map(headers)?;
+        let h_map = ReqwestHueClient::header_to_header_map(headers)?;
         let res = self
             .client
             .get(url)
-            .headers(headers)
+            .headers(h_map)
             .send()
             .await
             .map_err(CoreError::Network)?;
@@ -83,11 +84,11 @@ impl HueClient for ReqwestHueClient {
     }
 
     async fn put_json(&self, url: &str, body: &str, headers: &[Header]) -> CoreResult<String> {
-        let headers = ReqwestHueClient::header_to_header_map(headers)?;
+        let h_map = ReqwestHueClient::header_to_header_map(headers)?;
         let res = self
             .client
             .put(url)
-            .headers(headers)
+            .headers(h_map)
             .body(body.to_string())
             .send()
             .await
