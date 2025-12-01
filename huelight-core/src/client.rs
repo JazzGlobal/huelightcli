@@ -22,9 +22,9 @@ impl Header {
 
 #[async_trait]
 pub trait HueClient {
-    async fn post_json(&self, url: &str, body: &str, headers: Vec<Header>) -> CoreResult<String>;
-    async fn get(&self, url: &str, headers: Vec<Header>) -> CoreResult<String>;
-    async fn put_json(&self, url: &str, body: &str, headers: Vec<Header>) -> CoreResult<String>;
+    async fn post_json(&self, url: &str, body: &str, headers: &[Header]) -> CoreResult<String>;
+    async fn get(&self, url: &str, headers:  &[Header]) -> CoreResult<String>;
+    async fn put_json(&self, url: &str, body: &str, headers:  &[Header]) -> CoreResult<String>;
 }
 
 pub struct ReqwestHueClient {
@@ -53,10 +53,10 @@ impl ReqwestHueClient {
 
 #[async_trait]
 impl HueClient for ReqwestHueClient {
-    async fn post_json(&self, url: &str, body: &str, headers: Vec<Header>) -> CoreResult<String> {
+    async fn post_json(&self, url: &str, body: &str, headers: &[Header]) -> CoreResult<String> {
         // Implementation for sending a POST request with JSON body
 
-        let headers = ReqwestHueClient::header_to_header_map(&headers)?;
+        let headers = ReqwestHueClient::header_to_header_map(headers)?;
         let res = self
             .client
             .post(url)
@@ -69,8 +69,8 @@ impl HueClient for ReqwestHueClient {
         res.text().await.map_err(CoreError::Network)
     }
 
-    async fn get(&self, url: &str, headers: Vec<Header>) -> CoreResult<String> {
-        let headers = ReqwestHueClient::header_to_header_map(&headers)?;
+    async fn get(&self, url: &str, headers: &[Header]) -> CoreResult<String> {
+        let headers = ReqwestHueClient::header_to_header_map(headers)?;
         let res = self
             .client
             .get(url)
@@ -82,8 +82,8 @@ impl HueClient for ReqwestHueClient {
         res.text().await.map_err(CoreError::Network)
     }
 
-    async fn put_json(&self, url: &str, body: &str, headers: Vec<Header>) -> CoreResult<String> {
-        let headers = ReqwestHueClient::header_to_header_map(&headers)?;
+    async fn put_json(&self, url: &str, body: &str, headers: &[Header]) -> CoreResult<String> {
+        let headers = ReqwestHueClient::header_to_header_map(headers)?;
         let res = self
             .client
             .put(url)
