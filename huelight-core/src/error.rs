@@ -1,4 +1,4 @@
-use reqwest::header::{InvalidHeaderValue, InvalidHeaderName};
+use reqwest::header::{InvalidHeaderName, InvalidHeaderValue};
 use thiserror::Error;
 
 pub type CoreResult<T> = Result<T, CoreError>;

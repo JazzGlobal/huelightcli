@@ -222,12 +222,7 @@ mod tests {
             (self.get_fn)(url)
         }
 
-        async fn put_json(
-            &self,
-            url: &str,
-            body: &str,
-            _headers: &[Header],
-        ) -> CoreResult<String> {
+        async fn put_json(&self, url: &str, body: &str, _headers: &[Header]) -> CoreResult<String> {
             (self.put_json_fn)(url, body)
         }
     }
