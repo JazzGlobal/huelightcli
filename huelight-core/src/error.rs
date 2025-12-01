@@ -1,3 +1,4 @@
+use reqwest::header::{InvalidHeaderName, InvalidHeaderValue};
 use thiserror::Error;
 
 pub type CoreResult<T> = Result<T, CoreError>;
@@ -18,6 +19,12 @@ pub enum CoreError {
 
     #[error("config error occurred: {0}")]
     Config(#[from] ConfigError),
+
+    #[error("invalid reqwest header name. could not be converted to headermap")]
+    InvalidReqwestHeaderName(#[from] InvalidHeaderName),
+
+    #[error("invalid reqwest header value. could not be converted to headermap")]
+    InvalidReqwestHeaderValue(#[from] InvalidHeaderValue),
 
     #[error("unexpected response from Hue Bridge: {0}")]
     UnexpectedResponse(String),

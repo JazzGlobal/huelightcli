@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::client::HueClient;
+use crate::client::{Header, HueClient};
 use crate::error::{CoreError, CoreResult, HueBridgeError};
 use crate::logger::ILogger;
 use crate::models::createuser::{CreateUserEntry, CreateUserResponse, User};
@@ -51,7 +51,7 @@ impl HueApi for HueApiV1 {
          */
 
         let url = format!("http://{}/api/{}/lights", ip_address, username);
-        let res = self.client.get(&url).await?;
+        let res = self.client.get(&url, &[]).await?;
         let parsed = serde_json::from_str::<LightResponse>(&res).map_err(|err| {
             self.logger.log(&format!(
                 "Failed to parse lights JSON: {err}. Raw (truncated): {}",
@@ -79,7 +79,8 @@ impl HueApi for HueApiV1 {
             ip_address, username, light_id
         );
         let json_state = serde_json::to_string(&state).map_err(CoreError::Serialization)?;
-        let res = self.client.put_json(&url, &json_state).await?;
+        let headers = vec![Header::new("Content-Type", "application/json")];
+        let res = self.client.put_json(&url, &json_state, &headers).await?;
         let hue_response_list =
             serde_json::from_str::<HueResponse>(&res).map_err(CoreError::Serialization)?;
         Ok(hue_response_list)
@@ -102,7 +103,8 @@ pub async fn async_create_user(
 
     // Use the injected client to send the POST request
     let url = format!("http://{}/api", ip_address);
-    let res = client.post_json(&url, &json_user).await?;
+    let headers = vec![Header::new("Content-Type", "application/json")];
+    let res = client.post_json(&url, &json_user, &headers).await?;
 
     let parsed: CreateUserResponse = serde_json::from_str(&res).map_err(|err| {
         logger.log(&format!(
@@ -147,7 +149,7 @@ mod tests {
     use std::sync::Arc;
 
     use super::{HueApi, HueApiV1, async_create_user};
-    use crate::client::HueClient;
+    use crate::client::{Header, HueClient};
     use crate::error::{CoreError, CoreResult, HueBridgeError};
     use crate::logger::{ILogger, Logger};
     use crate::models::hueerror::HueResponseEntry;
@@ -207,15 +209,20 @@ mod tests {
 
     #[async_trait]
     impl HueClient for MockHueClient {
-        async fn post_json(&self, url: &str, body: &str) -> CoreResult<String> {
+        async fn post_json(
+            &self,
+            url: &str,
+            body: &str,
+            _headers: &[Header],
+        ) -> CoreResult<String> {
             (self.post_json_fn)(url, body)
         }
 
-        async fn get(&self, url: &str) -> CoreResult<String> {
+        async fn get(&self, url: &str, _headers: &[Header]) -> CoreResult<String> {
             (self.get_fn)(url)
         }
 
-        async fn put_json(&self, url: &str, body: &str) -> CoreResult<String> {
+        async fn put_json(&self, url: &str, body: &str, _headers: &[Header]) -> CoreResult<String> {
             (self.put_json_fn)(url, body)
         }
     }
