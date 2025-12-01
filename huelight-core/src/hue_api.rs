@@ -51,7 +51,7 @@ impl HueApi for HueApiV1 {
          */
 
         let url = format!("http://{}/api/{}/lights", ip_address, username);
-        let res = self.client.get(&url, &Vec::new()).await?;
+        let res = self.client.get(&url, &[]).await?;
         let parsed = serde_json::from_str::<LightResponse>(&res).map_err(|err| {
             self.logger.log(&format!(
                 "Failed to parse lights JSON: {err}. Raw (truncated): {}",

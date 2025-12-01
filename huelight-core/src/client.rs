@@ -113,7 +113,7 @@ mod tests {
         let header = Header::new(h_name, h_value);
 
         // Act
-        let result = client::ReqwestHueClient::header_to_header_map(&vec![header]);
+        let result = client::ReqwestHueClient::header_to_header_map(&[header]);
 
         // Assert
         assert!(matches!(
@@ -131,7 +131,7 @@ mod tests {
         let header = Header::new(h_name, h_value);
 
         // Act
-        let result = client::ReqwestHueClient::header_to_header_map(&vec![header]);
+        let result = client::ReqwestHueClient::header_to_header_map(&[header]);
 
         // Assert
         assert!(matches!(
@@ -149,7 +149,7 @@ mod tests {
         let header = Header::new(h_name, h_value);
 
         // Act
-        let result = client::ReqwestHueClient::header_to_header_map(&vec![header]);
+        let result = client::ReqwestHueClient::header_to_header_map(&[header]);
 
         // Assert
         let header_map = result.unwrap();
