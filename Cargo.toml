@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "huelight-core",
-    "huelight-cli", "huelight-angular",
+    "huelight-cli", 
+    "huelight-angular/backend",
 ]
