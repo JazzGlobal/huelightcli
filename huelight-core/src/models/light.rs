@@ -1,13 +1,16 @@
+use palette::{FromColor, Hsl};
 use serde::{Deserialize, Serialize};
+use serde_json::{Map, Value, json};
+
 use std::collections::HashMap;
 
 // Light related models
 pub type LightId = u32;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct LightResponse(pub HashMap<LightId, Light>);
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Light {
     pub state: LightState,
     pub name: String,
@@ -46,6 +49,34 @@ impl LightState {
     pub fn with_saturation(mut self, saturation: u8) -> Self {
         self.saturation = Some(saturation);
         self
+    }
+    
+    pub fn rgb_to_hsl(mut self, rgb: palette::Srgb) -> Self {
+        let hsl = Hsl::from_color(rgb);
+        let degrees = hsl.hue.into_degrees();      // 0.0–360.0
+        let clipped = (degrees % 360.0).max(0.0); 
+        let hue_u16 = ((clipped / 360.0) * 65535.0).round() as u16;
+        self.hue = Some(hue_u16);
+
+        // sat
+
+        self
+    }
+
+    pub fn to_v2_json_str(&self) -> String {
+        let mut obj = Map::new();
+
+        if let Some(on) = self.on {
+            obj.insert("on".into(), json!({ "on": on }));
+        }
+        if let Some(bri) = self.brightness {
+            obj.insert("dimming".into(), json!({ "brightness": bri }));
+        }
+
+        // Convert Hue + Saturation to Color XY.
+        
+
+       Value::Object(obj).to_string()
     }
 }
 
