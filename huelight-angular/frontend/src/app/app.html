@@ -5,13 +5,18 @@
 
   <main class="app-content">
     <p>App is running.</p>
-    
     <div class="row">
       <div class="col-md-4"></div>
       <div class="col-md-4">
-        <app-widget-frame title="Light 1" description="this is a description">
-          <p>This is my ng content from the parent!</p>
-        </app-widget-frame>
+        @for (item of lights(); track item.id) {
+          <app-widget-frame title="Light {{item.id}}: {{item.name}}" description="this is a description">
+            <p>On: {{item.state.on}}</p>
+            <p>Brightness: {{item.state.bri}}</p>
+            <p>Hue: {{item.state.hue}}</p>
+            <p>Saturation: {{item.state.sat}}</p>
+          </app-widget-frame>
+          <br>
+        }
       </div>
       <div class="col-md-4"></div>
     </div>
