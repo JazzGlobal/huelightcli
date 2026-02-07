@@ -27,6 +27,12 @@ struct LightDto {
     _type: String,
 }
 
+async fn set_light_state(light_state: LightState) -> Json<String> {
+    // Placeholder for setting light state
+    println!("Set light state endpoint called with: {:?}", light_state);
+    Json("Light state updated".into())
+}
+
 async fn get_lights() -> Json<Vec<LightDto>> {
 
     println!("Get lights endpoint called");
