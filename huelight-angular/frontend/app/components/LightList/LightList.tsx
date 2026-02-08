@@ -1,9 +1,11 @@
 import type { LightDto } from "~/services/api"
+import { Label } from "../ui/label"
 
 export function LightList({ lightData }: { lightData: LightDto[] }) {
     return (
         <div>
             <h1>Light List</h1>
+            <Label>Manage your lights</Label>
             <p>Here you can manage your lights.</p>
             {
                 lightData.map(light => (
