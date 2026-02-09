@@ -14,7 +14,7 @@ function SimpleInput({
     placeholder?: string
 }) {
     return (
-        <Field className="m-1">
+        <Field className=""> // TODO: variable for className maybe?
             <FieldLabel>{label}</FieldLabel>
             <Input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}></Input>
         </Field>
@@ -23,19 +23,19 @@ function SimpleInput({
 
 function SimpleInputButton({
     label,
+    onClick,
     value,
-    onChange,
-    placeholder,
+    labelContent,
 }: {    
     label: string,
     value: string,
-    onChange: (value: string) => void,
-    placeholder?: string
+    onClick?: () => void,
+    labelContent?: React.ReactNode
 }) {
     return (
-        <Field className="m-1">
-            <FieldLabel>{label}</FieldLabel>
-            <Button onClick={() => onChange(value)}>{placeholder}</Button>
+        <Field className="w-fit">
+            <FieldLabel>{label} {labelContent}</FieldLabel>
+            <Button onClick={onClick}>{value}</Button>
         </Field>
     )
 }

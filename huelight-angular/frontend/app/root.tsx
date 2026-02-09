@@ -33,6 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <h1 className="text-2xl font-bold text-center">HueLight Controller</h1> // TODO: Replace with header component / navbar component.
         {children}
         <ScrollRestoration />
         <Scripts />
