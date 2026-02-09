@@ -14,7 +14,7 @@ function SimpleInput({
     placeholder?: string
 }) {
     return (
-        <Field className=""> // TODO: variable for className maybe?
+        <Field className="">  {/* TODO: variable for className maybe? */}
             <FieldLabel>{label}</FieldLabel>
             <Input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}></Input>
         </Field>

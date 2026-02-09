@@ -26,12 +26,10 @@ export function Setup() {
                         onClick={() => { alert("Test connection") }}
                         value="Test Connection"
                         labelContent={
-                        // TODO: If connected, show checkmark. Otherwise, show red X.
+                        /* TODO: If connected, show checkmark. Otherwise, show red X. */
                         <CircleCheckBig className="inline text-green-500" />}
                     />
                 </div>
-
-
 
                 <div className="pt-2">
                     <Button onClick={() => { alert("Save and Continue") }}>Save and Continue</Button>
